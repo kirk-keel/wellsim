@@ -1,0 +1,25 @@
+# Test case: parted tubing. Same reservoir as dry_gas_big_bore_liner; the gas flows up
+# 2.992 in ID tubing from the inflow node to 500 ft, where the tubing has parted, then up
+# the 8.681 in ID casing to surface. The flow chokes at the top of the tubing (500 ft),
+# not at the exit. Represented as two hole sections because the schema's string must
+# start at surface; hydraulically identical. Not a validation case.
+name: dry_gas_parted_tubing
+description: 2.992 in tubing to 500 ft below a 8.681 in casing; internal choke at the tubing top.
+reservoir:
+  pressure: 8000
+  temperature: 250
+  depth_md: 11950
+  net_pay: 100
+  permeability: 500
+  wellbore_radius: 0.25
+  drainage_radius: 2000
+  skin: 0.0
+fluid:
+  type: dry_gas
+  gas_sg: 0.65
+well:
+  total_depth_md: 12000
+  hole:
+    - {top_md: 0, bottom_md: 500, id: 8.681, kind: casing}
+    - {top_md: 500, bottom_md: 12000, id: 2.992, kind: casing, roughness: 0.0018}
+flow_path: no_string

@@ -1,0 +1,27 @@
+# Example: dry gas well flowing up 9 5/8" casing with no string in hole.
+# Numbers are illustrative, not a validation case. Values may carry units;
+# bare numbers are canonical oilfield units.
+name: dry_gas_vertical_example
+description: Vertical dry-gas well, open casing to surface, choked exit expected.
+reservoir:
+  pressure: 380 bar
+  temperature: 120 degC
+  depth_md: 3500 m
+  net_pay: 30 m
+  permeability: 150 md
+  wellbore_radius: 0.354 ft
+  drainage_radius: 2000 ft
+  skin: 2.0
+fluid:
+  type: dry_gas
+  gas_sg: 0.65
+  co2: 2 %
+  n2: 1 %
+well:
+  total_depth_md: 11500 ft
+  hole:
+    - {top_md: 0, bottom_md: 10800, id: 8.681 in, kind: casing}
+    - {top_md: 10800, bottom_md: 11500, id: 8.5 in, kind: open_hole}
+flow_path: no_string
+exit:
+  ambient_pressure: 14.7 psia

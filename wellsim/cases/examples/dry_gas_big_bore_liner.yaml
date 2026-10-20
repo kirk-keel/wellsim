@@ -1,0 +1,23 @@
+# Test case: 12,000 ft vertical dry-gas well, 9 5/8 in casing (8.681 in ID) to 10,000 ft
+# then 2,000 ft of 6 in open hole; high-deliverability reservoir. Built to look at the
+# Mach number either side of the diameter change at 10,000 ft. Not a validation case.
+name: dry_gas_big_bore_liner
+description: Big-bore gas well with a 6 in open-hole section below the casing shoe; choked exit.
+reservoir:
+  pressure: 8000
+  temperature: 250
+  depth_md: 11950
+  net_pay: 100
+  permeability: 500
+  wellbore_radius: 0.25
+  drainage_radius: 2000
+  skin: 0.0
+fluid:
+  type: dry_gas
+  gas_sg: 0.65
+well:
+  total_depth_md: 12000
+  hole:
+    - {top_md: 0, bottom_md: 10000, id: 8.681, kind: casing}
+    - {top_md: 10000, bottom_md: 12000, id: 6.0, kind: open_hole}
+flow_path: no_string

@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wellsim"
+version = "0.0.1"
+description = "Steady-state blowout rate and dynamic kill simulator (Stage 1)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "scipy",
+    "pydantic>=2",
+    "PyYAML",
+]
+
+[project.optional-dependencies]
+ui = ["streamlit", "matplotlib", "plotly"]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+include = ["wellsim*"]
+
+[tool.setuptools.package-data]
+wellsim = ["cases/examples/*.yaml", "validation/cases/**/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["wellsim/tests"]
+pythonpath = ["."]
+addopts = "-q -m 'not perf and not slow'"
+markers = [
+    "perf: wall-time budget checks; excluded by default, run with pytest -m perf on a quiet machine",
+    "slow: multi-minute sweeps (the M3-4 rho_k kill sweep); excluded by default, run with pytest -m slow",
+]

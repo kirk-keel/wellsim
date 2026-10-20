@@ -1,0 +1,15 @@
+﻿.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+wellsim/validation/sources/
+out/
+
+*.egg-info/
+build/
+dist/
+
+# Source PDFs read in-session (BOEM/LSU and the like). Kept locally, never committed:
+# they are third-party documents, they are large, and PROVENANCE.md cites them by name
+# and page rather than by file.
+docs/test_docs/

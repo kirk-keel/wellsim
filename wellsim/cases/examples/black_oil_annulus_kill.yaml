@@ -1,0 +1,51 @@
+# Example: black oil well blowing out up the drillpipe/casing annulus with a
+# relief-well dynamic kill defined. Illustrative numbers only.
+name: black_oil_annulus_kill_example
+description: Deviated black-oil well, annulus flow, relief well injection at 9000 ft.
+reservoir:
+  pressure: 5200 psia
+  temperature: 210 degF
+  depth_md: 10500
+  net_pay: 80
+  permeability: 400
+  wellbore_radius: 0.354
+  drainage_radius: 1500
+  skin: 0
+  exposed_interval: 40
+fluid:
+  type: black_oil
+  oil_api: 32
+  gas_sg: 0.75
+  gor: 600 scf/stb
+  water_cut: 0.1
+  water_salinity: 35000 ppm
+well:
+  total_depth_md: 10600
+  survey:
+    - {md: 0, tvd: 0}
+    - {md: 3000, tvd: 3000}
+    - {md: 7000, tvd: 6500}
+    - {md: 10600, tvd: 9600}
+  hole:
+    - {top_md: 0, bottom_md: 9800, id: 8.535, kind: casing}
+    - {top_md: 9800, bottom_md: 10600, id: 8.5, kind: open_hole}
+  string:
+    - {top_md: 0, bottom_md: 9500, od: 5.0, id: 4.276}
+    - {top_md: 9500, bottom_md: 10100, od: 6.5, id: 2.813}
+flow_path: annulus
+temperature:
+  exit_temperature: 180 degF
+kill:
+  injection_depth_md: 9000
+  kill_fluid_density: 12.5 ppg
+  rheology: {type: newtonian, viscosity: 1.0 cp}
+  injection_path:
+    type: relief_well
+    sections:
+      - {length: 9200, id: 4.276}
+      - {length: 300, id: 8.535, od_inner: 5.0}
+  pump_pressure_limit: 5000 psi
+  available_hhp: 4000 hp
+options:
+  correlations:
+    vlp: [hagedorn_brown, beggs_brill]
