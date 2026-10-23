@@ -1,1 +1,5 @@
-"""Streamlit app. Thin layer over wellsim.core; no physics here. Lands in M6."""
+"""UI subsystem for wellsim: interactive web console and Streamlit application."""
+
+from wellsim.ui.server import run_server
+
+__all__ = ["run_server"]

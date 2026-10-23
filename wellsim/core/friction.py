@@ -15,10 +15,91 @@ from __future__ import annotations
 
 import math
 
-__all__ = ["darcy_friction_factor", "reynolds_number", "RE_LAMINAR"]
+__all__ = [
+    "darcy_friction_factor",
+    "reynolds_number",
+    "RE_LAMINAR",
+    "bingham_reynolds_number",
+    "hedstrom_number",
+    "critical_reynolds_number",
+    "bingham_pressure_gradient",
+]
 
 RE_LAMINAR = 2300.0
 _LBM_FT_S_PER_CP = 6.719689e-4  # 1 cp = 6.7197e-4 lbm/(ft s)
+
+
+def bingham_reynolds_number(rho_ppg: float, v_fps: float, d_in: float, pv_cp: float) -> float:
+    """Bingham Reynolds number: Re_B = 928 * rho * v * D / PV."""
+    if pv_cp <= 0.0 or d_in <= 0.0:
+        return 0.0
+    return 928.0 * rho_ppg * abs(v_fps) * d_in / pv_cp
+
+
+def hedstrom_number(rho_ppg: float, yp_lbf_100ft2: float, d_in: float, pv_cp: float) -> float:
+    """Hedstrom number: He = 37100 * rho * YP * D^2 / PV^2."""
+    if pv_cp <= 0.0 or d_in <= 0.0:
+        return 0.0
+    return 37100.0 * rho_ppg * max(0.0, yp_lbf_100ft2) * (d_in**2) / (pv_cp**2)
+
+
+def critical_reynolds_number(hedstrom: float) -> float:
+    """Critical Reynolds number for transition from laminar to turbulent Bingham plastic flow."""
+    if hedstrom <= 0.0:
+        return RE_LAMINAR
+    # Hanks (1963) / API approximation
+    return max(RE_LAMINAR, 1.35 * (hedstrom**0.45))
+
+
+def bingham_pressure_gradient(
+    rho_ppg: float,
+    v_fps: float,
+    d_in: float,
+    pv_cp: float,
+    yp_lbf_100ft2: float,
+    is_annulus: bool = False,
+    rel_rough: float = 0.00018,
+) -> float:
+    """Frictional pressure gradient (psi/ft) for a Bingham plastic drilling mud.
+
+    Args:
+        rho_ppg: Fluid density (ppg).
+        v_fps: Flow velocity (ft/s).
+        d_in: Inner diameter (pipe) or hydraulic clearance (ID_hole - OD_pipe) (inches).
+        pv_cp: Plastic Viscosity (cp).
+        yp_lbf_100ft2: Yield Point (lbf/100 ft2).
+        is_annulus: True for annular flow, False for pipe flow.
+        rel_rough: Pipe relative roughness eps/d.
+
+    Returns:
+        Frictional pressure gradient in psi/ft.
+    """
+    if v_fps <= 0.0 or d_in <= 0.0:
+        return 0.0
+
+    re_b = bingham_reynolds_number(rho_ppg, v_fps, d_in, pv_cp)
+    he = hedstrom_number(rho_ppg, yp_lbf_100ft2, d_in, pv_cp)
+    re_crit = critical_reynolds_number(he)
+
+    if re_b < re_crit:
+        # Laminar flow (API RP 13D)
+        if is_annulus:
+            return (pv_cp * v_fps / (1000.0 * (d_in**2))) + (yp_lbf_100ft2 / (200.0 * d_in))
+        else:
+            return (pv_cp * v_fps / (1500.0 * (d_in**2))) + (yp_lbf_100ft2 / (225.0 * d_in))
+    else:
+        # Turbulent flow (effective viscosity approach)
+        if is_annulus:
+            mu_eff = pv_cp + (6.66 * yp_lbf_100ft2 * d_in / v_fps)
+        else:
+            mu_eff = pv_cp + (5.0 * yp_lbf_100ft2 * d_in / v_fps)
+
+        re_eff = 928.0 * rho_ppg * v_fps * d_in / max(1.0, mu_eff)
+        f = darcy_friction_factor(re_eff, rel_rough)
+        rho_lbm_ft3 = rho_ppg * 7.480519
+        d_ft = d_in / 12.0
+        # Darcy-Weisbach: dp/dL = f * rho * v^2 / (2 * g_c * D * 144)
+        return (f * rho_lbm_ft3 * (v_fps**2)) / (2.0 * 32.174 * d_ft * 144.0)
 
 
 def reynolds_number(rho: float, v: float, d_ft: float, mu_cp: float) -> float:

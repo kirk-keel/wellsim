@@ -196,3 +196,67 @@ r = solve(load_case("wellsim/cases/examples/rw_wgr.json"))
 rw = r.kill["relief_well"]
 print(rw["p_zinj_psia"], rw["at_kill"]["p_pump_psig"], rw["at_kill"]["hhp"])
 ```
+
+
+## Interactive Well Control Simulator & Training Console
+
+`wellsim` includes a full time-domain transient simulator and zero-dependency web console designed for IADC WellSharp / IWCF well control training, real-time kick detection, and choke operations:
+
+```bash
+# Launch interactive simulator web console on port 8080
+python -m wellsim.ui 8080
+```
+
+Open `http://localhost:8080` in any modern web browser to access:
+- **Gauges & Strip Charts**: Real-time 60-second scrolling telemetry for Standpipe Pressure (SPP), Casing Pressure (CP / SICP), Pit Volume Gain, Flow Out %, Mud Density In/Out, and Pump SPM.
+- **Remote Choke Panel**: Step-by-step digital choke controls (±1%, ±5%) with choke position indicator and target pressure tracking.
+- **PID Auto-Choke**: Closed-loop hydraulic feedback maintaining constant BHP during kill mud circulation.
+- **Audible Rig Alarms**: Audio synthesizer triggers alerts on kick detection (>10 bbl gain) and MAASP exceedance warnings.
+- **Kill Sheet Generator & Export**: Auto-computes Kill Mud Weight (KMW), Initial Circulating Pressure (ICP), Final Circulating Pressure (FCP), MAASP, and Driller's Method step-down schedules with direct Markdown kill sheet downloads (`/api/killsheet/export`).
+- **IADC WellSharp Teaching Engine**: Pre-configured interactive scenarios (Kick Detection, Soft Shut-in, Driller's Method First Circulation, Second Circulation) with automated step criteria grading and feedback.
+
+### Batch Sweeps and Sensitivity (M7)
+
+Automated parameter sweeping and tornado sensitivity analysis are available via `wellsim.batch.sweep`:
+
+```python
+from wellsim.cases.loader import load_case
+from wellsim.batch.sweep import sweep_parameter, tornado_sensitivity
+
+case = load_case("wellsim/cases/examples/dry_gas_vertical.yaml")
+sweep = sweep_parameter(case, "reservoir.permeability", [20.0, 50.0, 100.0, 200.0])
+print(sweep.to_markdown())
+```
+
+### Advanced Physics & Next-Gen Drilling Capabilities
+
+`wellsim` includes state-of-the-art physics modules engineered to exceed legacy industry software (e.g., SLB Drillbench). For detailed technical specifications, equations, and literature citations, see [`docs/next-gen-capabilities.md`](docs/next-gen-capabilities.md).
+
+- **Herschel-Bulkley (Yield-Power-Law / YPL) Rheology & HPHT Scaling** (`wellsim.core.rheology`): Full API RP 13D 3-parameter fluid characterization ($\tau = \tau_0 + K \dot{\gamma}^n$) fitted directly from Fann rotational viscometer dial readings, with Fann 75/77 downhole thermal-thinning and piezo-thickening viscosity corrections.
+- **OBM / SBM Gas Solubility & Flash Exsolution** (`wellsim.core.obm_solubility`): Non-aqueous drilling fluid (NADF) kick dynamics modeling complete methane dissolution downhole ($P > P_b$) with zero free gas, followed by explosive near-surface flash vaporization and annular unloading upon reaching the bubble point.
+- **Dynamic Surge & Swab Tripping Engine** (`wellsim.core.surge_swab`): Burkhardt & Mitchell pipe tripping models computing maximum safe running-in (RIH) and pulling-out (POOH) velocity envelopes to prevent casing shoe fracture or swab-induced reservoir kicks under both open-ended and closed-ended float valve conditions.
+- **Managed Pressure Drilling (MPD) Suite** (`wellsim.core.mpd`): Coriolis flow meter mass-balance micro-flux detection (0.5 to 1.5 bbl thresholds), automated Constant Bottomhole Pressure (CBHP) surface backpressure (SBP) regulation PID loops, and deepwater subsea choke/kill line friction backpressure modeling.
+- **Live WITS Level 0 Telemetry** (`wellsim.core.wits`): Real-time WITS0 encoder/decoder streams enabling `wellsim` to operate as a live digital twin or hardware-in-the-loop (HIL) simulator feeding drilling cyberbase consoles via `/api/wits`.
+- **Dynamic Cuttings Transport & Hole Cleaning** (`wellsim.core.cuttings_transport`): Larsen / API RP 13D 3-layer solids transport engine modeling slip velocity, critical transport velocity, stationary cuttings bed accumulation, annular choking, and mechanical pack-off risk in directional and horizontal wells (0° to 90° inclination).
+- **Comparative Well Control Strategy Matrix** (`wellsim.core.kill_comparison`): Side-by-side benchmark comparing Driller's Method (2-circ), Wait & Weight (1-circ), Volumetric Lubricate & Bleed, and Dynamic Bullheading across peak casing pressure, casing shoe breakdown stress, and execution duration.
+- **Minimum Curvature 3D Directional Trajectory Engine** (`wellsim.core.survey`): Industry standard survey calculation mapping raw $(MD, Inc, Azm)$ stations into 3D spatial $(TVD, North, East, DLS)$ coordinates with JSON coordinates exported for 3D web visualizations.
+- **3D Torque & Drag and Drillstring Buckling** (`wellsim.core.torque_drag`): Johancsik soft-string tension, torque, and normal force integration with Dawson-Paslay / Wu sinusoidal & helical buckling thresholds and ERD lock-up depth determination.
+- **Rig Telemetry Anomaly Detector & Early Warning** (`wellsim.core.anomaly_detection`): Real-time detector flagging drilling breaks, bit nozzle plugging vs. drillstring washout signatures ($SPP/SPM^2$), and differential sticking vs. mechanical pack-off classification.
+- **Historical Blowout Benchmark Library**: Pre-calibrated wild-well intervention cases including Macondo MC252 (G5 deepwater oil blowout), Aliso Canyon SS-25 (underground storage parted casing), and Montara H1-ST1 (offshore Timor Sea platform blowout).
+- **Headless Production CLI** (`wellsim`): Direct command-line interface for CI/CD and batch execution (`wellsim run case.yaml`, `wellsim check case.yaml`, `wellsim sweep case.yaml param v1 v2 ...`).
+- **Deepwater Gas Hydrate Formation & Inhibitor Dosing** (`wellsim.core.hydrates`): Sloan / Towler thermodynamic equilibrium model predicting hydrate freezing risk in subsea BOP and choke lines with automated Hammerschmidt dosing calculations for Methanol and MEG inhibitors.
+- **Underground Blowout & Cross-Flow Engine** (`wellsim.core.crossflow`): Coupled multi-formation internal hydraulics solving steady-state cross-flow from deep overpressured source reservoirs into ruptured thief zones, and sizing required dynamic relief-well kill rates.
+- **Dynamic Wellbore Heat Transfer** (`wellsim.core.hasan_kabir`): Hasan & Kabir (1994) / Ramey conjugate convection-conduction engine calculating exact counter-current drillpipe and annular temperature profiles along the wellbore over circulating time.
+- **API Spec 5CT Casing Structural Integrity Screening** (`wellsim.core.casing_integrity`): Full burst and collapse mechanical ratings under API Spec 5CT Barlow and API TR 5C3 (yield, plastic, transition, and elastic collapse) with dynamic safety factor screening during gas kicks and complete casing evacuation.
+- **Wellbore Ballooning / Breathing vs. Kick Discriminator** (`wellsim.core.ballooning`): Geomechanical fracture compliance and poroelastic relaxation engine analyzing flowback decay rates ($dq/dt < 0$ vs sustained $q_{kick}$) and asymptotic gain convergence to prevent false well shut-ins or catastrophic underbalanced kicks.
+- **Energistics WITSML 1.4.1.1 XML Telemetry** (`wellsim.core.witsml`): Bi-directional XML serialization and parsing for directional trajectory and wellbore tubular geometry schemas, enabling seamless enterprise integration with real-time drilling data hubs (Kongsberg SiteCom, SLB InterACT, Baker Hughes ADVANTAGE).
+- **Interactive 3D Spatial Trajectory Orbit Viewer**: Zero-dependency WebGL/Canvas perspective engine integrated directly into the web console with mouse orbit rotation, dogleg severity color gradients, live casing stress monitors, and one-click WITSML 1.4 XML export.
+- **Deepwater Riser Gas Handling & Diverter Routing** (`wellsim.core.riser_gas`): API RP 16Q & API Standard 53 marine riser gas dynamics modeling rapid Boyle/real-gas expansion, slip velocity, liquid mud ejection rates, subsea RGHS annular isolation, MGS Poor Boy liquid-seal blow-through screening, and multiphase diverter line friction backpressure.
+- **Dual-Gradient Drilling (DGD) & Subsea MudLift Pump (MLP)** (`wellsim.core.dual_gradient`): Deepwater narrow-margin drilling engine modeling seawater in the marine riser and heavy mud in the subsea wellbore, subsea MudLift Pump pressure regulation at the seabed ($P_{suction} = 0.052 \cdot \rho_{sw} \cdot WD$), MRL lift hydraulics, HHP sizing, and drillpipe-to-annulus U-tube imbalance / Drillstring Valve (DSV) cracking pressure.
+- **Managed Pressure Cementing & API RP 65-2 Gas Migration** (`wellsim.core.cementing`): Transient U-tubing ("free-fall") simulation during slurry placement (casing vacuum, return rate surges, and annular ECD vs. fracture limit) and post-placement Static Gel Strength (SGS) development ($100 \to 500\text{ lbf/100 ft}^2$) evaluating annular gas channeling risk and MPC surface backpressure requirements.
+- **Real-Time Unscented Kalman Filter (UKF) Digital Twin** (`wellsim.core.kalman`): Pure Python Sigma-Point nonlinear state estimator assimilating noisy WITS/WITSML rig telemetry (SPP, Casing Pressure, Pit Level, Flow Paddle) to dynamically infer downhole formation pore pressure ($P_{pore}$), kick volume ($V_{kick}$), and hydraulic friction factor multipliers with 95% confidence bounds.
+- **Production Containerization**: Multi-stage minimal `Dockerfile` and `docker-compose.yaml` for instant zero-dependency deployment on cloud VMs or offshore rig edge servers (`docker compose up`).
+- **Printable Official IADC WellSharp Kill Sheet**: Authentic certificate-ready training kill sheet with automated calculations and drillpipe step-down schedule (`/api/killsheet/print`).
+
+
+

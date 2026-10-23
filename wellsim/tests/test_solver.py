@@ -248,7 +248,9 @@ def test_dual_nodal_convergence_pressure_residual(gas_case_dict):
         assert not any(w.startswith("IPR and VLP pwf differ") for w in r.warnings)
 
 
-def test_black_oil_not_implemented(examples_dir):
+def test_black_oil_implemented(examples_dir):
     case = load_case(examples_dir / "black_oil_annulus_kill.yaml")
-    with pytest.raises(NotImplementedError):
-        solve(case)
+    res = solve(case)
+    assert res.flowing is True
+    assert res.fluid_type == "black_oil"
+    assert res.oil_rate > 0.0

@@ -14,11 +14,17 @@ wellsim/core/          physics, oilfield units, pure functions, no UI
   units.py             unit tables; conversion only at I/O boundaries
   pvt/                 base.py (PVTModel, PVTState, RangeWarning), dry_gas.py, black_oil.py,
                        heat_capacity.py (ideal-gas cp0, k0, delta_h0 from a gravity pseudo-composition)
-  ipr/gas.py           pseudo-pressure PSS gas IPR with non-Darcy D (oil.py lands in M4)
+  ipr/gas.py           pseudo-pressure PSS gas IPR with non-Darcy D
+  ipr/oil.py           Darcy pseudo-steady-state and Vogel composite black-oil IPR
   pvt/air.py           G2: air as an ideal gas, k 1.4, Sutherland mu; refuses DAK
   geometry.py          flow-path segments (hydraulic diameter, area, roughness, sin theta, d_o, d_i)
   temperature.py       linear flowing profile
-  friction.py          Colebrook-White
+  friction.py          Colebrook-White & Bingham Plastic non-Newtonian hydraulics
+  rheology.py          Herschel-Bulkley (Yield-Power-Law / YPL) & HPHT downhole viscosity scaling
+  obm_solubility.py    OBM/SBM gas dissolution (Henry/Vasquez-Beggs) & flash exsolution
+  surge_swab.py        dynamic surge & swab tripping velocity envelopes (Burkhardt/Mitchell)
+  mpd.py               Managed Pressure Drilling: Coriolis micro-flux, CBHP backpressure PID, subsea choke lines
+  wits.py              WITS Level 0 telemetry stream encoder & decoder
   exit.py              real-gas sonic velocity, Mach-1 exit check, sonic_pressure()
   vlp/march.py         marching integrator, regular through Mach 1, internal-choke reset, model hook
   vlp/area_change.py   sudden expansion (Borda-Carnot) and contraction (Crane loss + isentropic) steps
@@ -26,11 +32,32 @@ wellsim/core/          physics, oilfield units, pure functions, no UI
   vlp/holdup.py        drift-flux holdup closure (M3-1); vlp/two_phase.py the two-phase march (M3-2)
   nodal.py             pwf-space root of pwf_vlp(q_ipr(pwf)) - pwf; every root returned and tagged
   solver.py            solve(case) -> Result, pure; solver_two_phase.py the gas-liquid nodal (M3-3)
+  solver_black_oil.py  solve_black_oil(case) -> 3-phase nodal forward solve (M4)
   kill.py              dynamic kill with a Newtonian kill fluid (M3-4); z_inj_state for rw-1
   relief_well.py       rw-1 pump pressure, HHP, free fall, schedule; rw-2 Ramey arrival T
   inverse.py           inverse mode: kh from an observed rate, p_r from SIWHP (observed block)
   montecarlo.py        mc-1: forward Monte Carlo on rate, static-hold mud weight, kill rate (mc block)
   numerics.py          own brent()/bracket (no scipy in the solver path)
+  well_control.py      IADC/IWCF formulas (KMW, ICP, FCP, MAASP, ECD, step-down schedule)
+  transient.py         time-domain well control engine (delta t, influx migration, choke, PID)
+  cuttings_transport.py dynamic 3-layer cuttings bed & hole cleaning (Larsen/API RP 13D)
+  kill_comparison.py   well control strategy matrix (Driller's vs. Wait & Weight vs. Volumetric vs. Bullheading)
+  survey.py            Minimum Curvature 3D directional trajectory & dogleg severity engine
+  torque_drag.py       3D Johancsik soft-string torque & drag, Dawson-Paslay buckling & lockup
+  anomaly_detection.py real-time drilling break, nozzle plugging, washout & pack-off detector
+  hydrates.py          deepwater gas hydrate equilibrium (Sloan/Towler) & inhibitor dosing (Methanol/MEG)
+  crossflow.py         underground blowout & inter-zonal crossflow hydraulics & dynamic relief kill
+  hasan_kabir.py       dynamic wellbore heat transfer (Hasan-Kabir conjugate convection-conduction)
+  casing_integrity.py  API Spec 5CT & TR 5C3 burst and collapse structural ratings & dynamic safety screening
+  ballooning.py        wellbore ballooning/breathing vs. kick discriminator (fracture compliance dq/dt)
+  witsml.py            WITSML 1.4.1.1 XML telemetry generator & parser for trajectory and wbGeometry
+  riser_gas.py         deepwater marine riser gas unloading, Boyle expansion & diverter routing (API 16Q/53)
+  dual_gradient.py     Dual-Gradient Drilling (DGD) & Subsea MudLift Pump (MLP) hydraulics & U-tube balancing
+  cementing.py         Managed Pressure Cementing (MPC) U-tube free fall & API RP 65-2 gas migration risk
+  kalman.py            Real-time Unscented Kalman Filter (UKF) digital twin state estimator (P_pore, V_kick, f_mult)
+wellsim/teaching/      scenarios.py (IADC WellSharp lessons 1-4 with step evaluation)
+wellsim/ui/            server.py & __main__.py (standalone browser console, canvas strip charts, audio alerts)
+wellsim/batch/         sweep.py (M7 parametric sweeps and tornado sensitivity analysis)
 wellsim/cases/         schema.py (pydantic, canonical units), loader.py, examples/*.yaml and mc_wgr.json
 wellsim/validation/    g2_lsu.py: the LSU PERTT gate, point values against Table A.1
 wellsim/tests/         pytest; every expected value carries a provenance tag

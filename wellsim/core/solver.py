@@ -167,8 +167,34 @@ def build_ipr(case: Case, pvt) -> tuple[GasIPR, str]:
 
 def solve(case: Case) -> Result:
     t0 = time.perf_counter()
+    if case.fluid.type == "black_oil":
+        from wellsim.core.ipr.oil import OilIPR
+        from wellsim.core.solver_black_oil import solve_black_oil
+
+        warnings = _static_warnings(case)
+        with collect_range_warnings() as range_warnings:
+            pvt = make_pvt(case.fluid, case.options.correlations)
+            res = case.reservoir
+            ipr = OilIPR(
+                pvt=pvt,
+                p_res=res.pressure,
+                t_res=res.temperature,
+                k=res.permeability,
+                h=res.net_pay,
+                r_e=res.drainage_radius,
+                r_w=res.wellbore_radius,
+                skin=res.skin,
+                h_p=res.exposed_interval,
+                h_1=res.exposed_top_offset,
+                kv_kh=res.kv_kh,
+            )
+            notes: list[str] = []
+            res_obj = solve_black_oil(case, pvt, ipr, notes, warnings, t0)
+            res_obj.range_warnings = range_warnings
+            return res_obj
+
     if case.fluid.type != "dry_gas":
-        raise NotImplementedError("black-oil blowout rate lands in M4; M2 solves dry gas only")
+        raise ValueError(f"unsupported fluid type {case.fluid.type!r}")
     opts = case.options
     num = opts.numerics
     res = case.reservoir

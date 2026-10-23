@@ -43,18 +43,23 @@ import math
 import warnings
 
 from wellsim.core.pvt.base import (
+    M_AIR,
     P_SC,
+    R_PSIA_FT3,
     RHO_WATER_SC,
     PVTModel,
     PVTState,
     check_range,
+    rankine,
 )
+from wellsim.core.pvt import heat_capacity
 from wellsim.core.pvt.dry_gas import (
     Z_METHODS,
     gas_density,
     gas_fvf,
     lee_gonzalez_eakin,
     pseudocriticals,
+    z_dak_full,
 )
 
 __all__ = [
@@ -199,7 +204,9 @@ def beggs_robinson_dead(t_f: float, api: float) -> float:
     """Beggs-Robinson dead-oil viscosity, cp: 10^x - 1, x = T^-1.163 10^(3.0324 - 0.02023 API)."""
     check_range("Beggs-Robinson dead oil", "API", api, 16.0, 58.0, "degAPI")
     check_range("Beggs-Robinson dead oil", "T", t_f, 70.0, 295.0, "degF")
-    x = t_f ** (-1.163) * 10.0 ** (3.0324 - 0.02023 * api)
+    t_eval = max(t_f, 32.0)
+    x = t_eval ** (-1.163) * 10.0 ** (3.0324 - 0.02023 * api)
+    x = min(x, 8.0)
     return 10.0**x - 1.0
 
 
@@ -268,7 +275,8 @@ def mccain_water_viscosity(p: float, t_f: float, salinity_ppm: float) -> float:
     check_range("McCain water viscosity", "p", p, P_SC, 14000.0, "psia")
     a = 109.574 - 8.40564 * s + 0.313314 * s**2 + 8.72213e-3 * s**3
     b = -1.12166 + 2.63951e-2 * s - 6.79461e-4 * s**2 - 5.47119e-5 * s**3 + 1.55586e-6 * s**4
-    mu1 = a * t_f**b
+    t_eval = max(t_f, 32.0)
+    mu1 = a * t_eval**b
     return mu1 * (0.9994 + 4.0295e-5 * p + 3.1062e-9 * p**2)
 
 
@@ -278,12 +286,14 @@ def mccain_rsw(p: float, t_f: float, salinity_ppm: float) -> float:
     check_range("McCain Rsw", "T", t_f, 100.0, 340.0, "degF")
     check_range("McCain Rsw", "p", p, 1000.0, 10000.0, "psia")
     check_range("McCain Rsw", "salinity", s, 0.0, 30.0, "wt%")
-    a = 8.15839 - 6.12265e-2 * t_f + 1.91663e-4 * t_f**2 - 2.1654e-7 * t_f**3
-    b = 1.01021e-2 - 7.44241e-5 * t_f + 3.05553e-7 * t_f**2 - 2.94883e-10 * t_f**3
-    c = (-9.02505 + 0.130237 * t_f - 8.53425e-4 * t_f**2 + 2.34122e-6 * t_f**3 - 2.37049e-9 * t_f**4) * 1e-7
+    t_eval = max(t_f, 32.0)
+    a = 8.15839 - 6.12265e-2 * t_eval + 1.91663e-4 * t_eval**2 - 2.1654e-7 * t_eval**3
+    b = 1.01021e-2 - 7.44241e-5 * t_eval + 3.05553e-7 * t_eval**2 - 2.94883e-10 * t_eval**3
+    c = (-9.02505 + 0.130237 * t_eval - 8.53425e-4 * t_eval**2 + 2.34122e-6 * t_eval**3 - 2.37049e-9 * t_eval**4) * 1e-7
     rsw_pure = a + b * p + c * p**2
-    factor = 10.0 ** (-0.0840655 * s * t_f ** (-0.285854))
-    return max(rsw_pure * factor, 0.0)
+    factor = 10.0 ** (-0.0840655 * s * t_eval ** (-0.285854))
+    res = rsw_pure * factor
+    return max(float(res.real if isinstance(res, complex) else res), 0.0)
 
 
 # --- surface tension (Baker-Swerdloff) -----------------------------------------
@@ -375,7 +385,41 @@ class BlackOilPVT(PVTModel):
         self._bo = BO_METHODS[bo_method]
         self._z = Z_METHODS[z_method]
         self.tpc, self.ppc = pseudocriticals(self.gas_sg)
+        self.composition = heat_capacity.pseudo_composition(self.gas_sg)
+        self._h_ref_j = self.composition.h_ideal_j(heat_capacity.kelvin(heat_capacity.T_REF_DEGF))
+        self._s_ref_j = self.composition.s_ideal_j(heat_capacity.kelvin(heat_capacity.T_REF_DEGF))
         self.rho_w_sc = water_density_sc(self.water_salinity) if self.water_cut > 0 else None
+
+    # -- thermal / gas departures ------------------------------------------------
+    def cp0_molar(self, t: float) -> float:
+        return heat_capacity.cp0_molar(t, self.composition)
+
+    def cp0_mass(self, t: float) -> float:
+        return heat_capacity.cp0_mass(t, self.composition)
+
+    def k_ratio(self, t: float) -> float:
+        return heat_capacity.k0(t, self.composition)
+
+    def delta_h0(self, t1: float, t2: float) -> float:
+        return heat_capacity.delta_h0(t1, t2, self.composition)
+
+    def s0_from_ref(self, t: float) -> float:
+        t_k = heat_capacity.kelvin(t)
+        heat_capacity.check_t(t_k)
+        return (self.composition.s_ideal_j(t_k) - self._s_ref_j) * heat_capacity.BTU_LBMOL_R_PER_J_MOL_K
+
+    def h0_from_ref(self, t: float) -> float:
+        t_k = heat_capacity.kelvin(t)
+        heat_capacity.check_t(t_k)
+        return (self.composition.h_ideal_j(t_k) - self._h_ref_j) / heat_capacity.J_PER_MOL_PER_BTU_PER_LBMOL
+
+    def thermo(self, p: float, t: float, state: PVTState | None = None):
+        from wellsim.core.pvt.real_gas_thermo import thermo_from_state
+        return thermo_from_state(self, self.state(p, t, True) if state is None else state)
+
+    @property
+    def molar_mass(self) -> float:
+        return M_AIR * self.gas_sg
 
     # -- oil ---------------------------------------------------------------------
 
@@ -462,7 +506,21 @@ class BlackOilPVT(PVTModel):
         pb = self.bubble_point(t)
         rs = self.rs(p, t)
         bo = self.bo(p, t)
-        z = self.z(p, t)
+        t_r = rankine(t)
+        tpr = t_r / self.tpc
+        ppr = p / self.ppc
+        if self.z_method == "dak":
+            z, rho_r, dz_dr, dz_dt = z_dak_full(ppr, tpr)
+            dp_drho = R_PSIA_FT3 * t_r / (M_AIR * self.gas_sg) * (z + rho_r * dz_dr)
+        else:
+            z = self._z(ppr, tpr)
+            rho_r = 0.27 * ppr / (z * tpr) if ppr > 0.0 else 0.0
+            dz_dr = dz_dt = None
+            dp = max(0.5, 0.005 * p)
+            rho0 = gas_density(p, t, self.gas_sg, z)
+            rho1 = gas_density(p + dp, t, self.gas_sg, self._z((p + dp) / self.ppc, tpr))
+            dp_drho = dp / (rho1 - rho0)
+
         rho_g = gas_density(p, t, self.gas_sg, z)
         st = PVTState(
             p=p,
@@ -472,6 +530,12 @@ class BlackOilPVT(PVTModel):
             rho_g=rho_g,
             mu_g=lee_gonzalez_eakin(t, self.gas_sg, rho_g, p),
             gas_sg=self.gas_sg,
+            tpr=tpr,
+            ppr=ppr,
+            rho_r=rho_r,
+            dz_drho_r=dz_dr,
+            dz_dtpr=dz_dt,
+            dp_drho_t=dp_drho,
             pb=pb,
             rs=rs,
             bo=bo,

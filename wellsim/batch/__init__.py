@@ -1,1 +1,19 @@
-"""Stage 1c: sweep.py and montecarlo.py. Built on the pure solve(case) -> result function."""
+"""Batch sweep and sensitivity analysis module (Milestone M7)."""
+
+from wellsim.batch.sweep import (
+    SweepResult,
+    SweepRow,
+    TornadoItem,
+    TornadoResult,
+    sweep_parameter,
+    tornado_sensitivity,
+)
+
+__all__ = [
+    "SweepResult",
+    "SweepRow",
+    "TornadoItem",
+    "TornadoResult",
+    "sweep_parameter",
+    "tornado_sensitivity",
+]

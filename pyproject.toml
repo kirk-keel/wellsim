@@ -19,6 +19,9 @@ dependencies = [
 ui = ["streamlit", "matplotlib", "plotly"]
 dev = ["pytest"]
 
+[project.scripts]
+wellsim = "wellsim.cli:main"
+
 [tool.setuptools.packages.find]
 include = ["wellsim*"]
 

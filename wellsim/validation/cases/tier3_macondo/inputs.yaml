@@ -1,0 +1,43 @@
+# Macondo (Deepwater Horizon) Blowout Validation Case (Gate G5)
+# Source: McNutt et al. (2012) PNAS, Oldenburg et al. (2011) PNAS, and FRTG Nodal Reports
+# Target flow rate band: 50,000 to 70,000 bopd (Bly Report Appendix W / FRTG)
+name: macondo_deepwater_blowout
+description: Macondo MC252 blowout into 5000 ft water depth with dropped drillpipe and BOP restriction.
+reservoir:
+  pressure: 11850 psia
+  temperature: 245 degF
+  depth_md: 18000 ft
+  datum_tvd: 13000 ft
+  net_pay: 90 ft
+  permeability: 180 md
+  wellbore_radius: 0.354 ft
+  drainage_radius: 2000 ft
+  skin: 0.0
+  exposed_interval: 90 ft
+fluid:
+  type: black_oil
+  oil_api: 35.2
+  gas_sg: 0.82
+  gor: 2200 scf/stb
+  water_cut: 0.0
+  water_salinity: 0 ppm
+well:
+  total_depth_md: 18000 ft
+  survey:
+    - {md: 0, tvd: 0}
+    - {md: 5000, tvd: 5000}
+    - {md: 18000, tvd: 13000}
+  hole:
+    - {top_md: 0, bottom_md: 18000, id: 8.625, kind: casing}
+  string:
+    - {top_md: 0, bottom_md: 18000, od: 5.5, id: 4.778}
+flow_path: annulus
+exit:
+  ambient_pressure: 2230 psia  # Seawater hydrostatic at 5,000 ft mudline
+  exit_id: 2.4 in              # Partially closed BOP blind shear ram restriction
+  cd: 0.7                      # Effective discharge coefficient
+temperature:
+  model: adiabatic
+options:
+  correlations:
+    vlp: [hagedorn_brown]

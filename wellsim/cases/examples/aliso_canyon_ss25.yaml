@@ -1,0 +1,28 @@
+# Historical Blowout Benchmark: Aliso Canyon SS-25 (2015)
+# In October 2015, Southern California Gas Co. well SS-25 suffered the largest methane
+# leak in US history (approx. 100,000 tonnes of methane released).
+# The 7 in casing parted at 965 ft depth. Gas flowed up from the Sesnon-25 storage
+# zone at 8,748 ft through the 7 in casing (6.151 in ID) to the rupture point at 965 ft,
+# then vented to surface. Seven top-kill attempts with 15-20 ppg mud and heavy brine
+# failed because gas velocity exceeded kill fluid downward hold. The well was killed
+# in February 2016 via relief well SS-25B intercepting at 8,390 ft depth.
+name: aliso_canyon_ss25
+description: Aliso Canyon SS-25 underground gas storage blowout with 7 in parted casing at 965 ft.
+reservoir:
+  pressure: 2750
+  temperature: 175
+  depth_md: 8748
+  net_pay: 150
+  permeability: 280
+  wellbore_radius: 0.292
+  drainage_radius: 1500
+  skin: 2.0
+fluid:
+  type: dry_gas
+  gas_sg: 0.58
+well:
+  total_depth_md: 8750
+  hole:
+    - {top_md: 0, bottom_md: 965, id: 8.681, kind: casing}
+    - {top_md: 965, bottom_md: 8750, id: 6.151, kind: casing, roughness: 0.0018}
+flow_path: no_string

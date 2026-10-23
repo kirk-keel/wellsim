@@ -1,0 +1,25 @@
+# Historical Blowout Benchmark: Montara H1-ST1 (2009, Timor Sea, Australia)
+# On August 21, 2009, PTTEP Australasia's Montara Wellhead Platform suffered an
+# uncontrolled blowout of oil and gas from the Montara formation at 12,300 ft MD.
+# Primary barrier failure occurred when the 9-5/8 in casing shoe cement failed,
+# followed by failure of the secondary pressure-containment corrosion cap.
+# Controlled after 74 days via West Triton relief well intercepting at 11,400 ft TVD.
+name: montara_h1
+description: Montara H1-ST1 offshore Timor Sea blowout through 9-5/8 in casing.
+reservoir:
+  pressure: 4650
+  temperature: 220
+  depth_md: 12300
+  net_pay: 110
+  permeability: 350
+  wellbore_radius: 0.354
+  drainage_radius: 2000
+  skin: 1.5
+fluid:
+  type: dry_gas
+  gas_sg: 0.68
+well:
+  total_depth_md: 12300
+  hole:
+    - {top_md: 0, bottom_md: 12300, id: 8.681, kind: casing, roughness: 0.0018}
+flow_path: no_string

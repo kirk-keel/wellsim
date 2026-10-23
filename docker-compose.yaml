@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  wellsim:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wellsim_simulator
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
