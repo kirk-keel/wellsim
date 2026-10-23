@@ -77,368 +77,1230 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>wellsim - Drilling Simulator & Well Control Console</title>
+  <title>SLB Drillbench v2026.1 // Dynamic Well Control & Blowout Simulator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     :root {
-      --bg: #0f141c;
-      --card-bg: #1a2230;
-      --accent: #00bcd4;
-      --accent-warn: #ff9800;
-      --accent-danger: #f44336;
-      --accent-good: #4caf50;
-      --text: #e0e6ed;
-      --text-muted: #8c9ba5;
-      --border: #2c384a;
+      --bg-app: #090d13;
+      --bg-ribbon: #111722;
+      --bg-panel: #141c28;
+      --bg-card: #182232;
+      --bg-surface: #0d131d;
+      --border-dim: #1f2b3e;
+      --border-bright: #2d3e58;
+      --slb-blue: #0077c8;
+      --slb-cyan: #00c0f0;
+      --slb-glow: rgba(0, 192, 240, 0.25);
+      --color-spp: #00c0f0;
+      --color-casing: #ff9800;
+      --color-pit: #10b981;
+      --color-flow: #f43f5e;
+      --color-choke: #ffd54f;
+      --color-target: #f59e0b;
+      --color-danger: #ef4444;
+      --color-good: #10b981;
+      --color-warn: #f59e0b;
+      --text-main: #f1f5f9;
+      --text-dim: #94a3b8;
+      --text-muted: #64748b;
+      --font-mono: "JetBrains Mono", "SF Mono", "Roboto Mono", Consolas, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; }
-    body { background-color: var(--bg); color: var(--text); padding: 15px; }
-    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 12px; margin-bottom: 15px; }
-    h1 { font-size: 1.4rem; color: var(--accent); letter-spacing: 1px; }
-    .badge { padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; }
-    .badge-drilling { background: #1565c0; color: #fff; }
-    .badge-flow-check { background: #e65100; color: #fff; }
-    .badge-shut-in { background: #c62828; color: #fff; }
-    .badge-circulating-kill { background: #2e7d32; color: #fff; }
-    
-    .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 15px; }
-    @media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } }
-    
-    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 15px; }
-    .card-title { font-size: 1.05rem; font-weight: 600; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; }
-    
-    .gauge-cluster { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
-    .gauge-box { background: #121824; border: 1px solid var(--border); border-radius: 6px; padding: 10px; text-align: center; }
-    .gauge-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
-    .gauge-value { font-size: 1.5rem; font-weight: bold; color: var(--accent); }
-    .gauge-unit { font-size: 0.75rem; color: var(--text-muted); }
-    
-    .choke-console { display: flex; flex-direction: column; gap: 12px; }
-    .choke-controls { display: flex; gap: 10px; align-items: center; justify-content: center; }
-    button { background: #2a3b50; color: #fff; border: 1px solid #3d516b; border-radius: 4px; padding: 8px 14px; cursor: pointer; font-weight: 600; transition: background 0.2s; }
-    button:hover { background: #3d516b; }
-    button.btn-danger { background: #b71c1c; border-color: #e53935; }
-    button.btn-danger:hover { background: #c62828; }
-    button.btn-good { background: #1b5e20; border-color: #2e7d32; }
-    button.btn-good:hover { background: #2e7d32; }
-    
-    .slider-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
-    .slider-row label { flex: 1; font-size: 0.85rem; color: var(--text-muted); }
-    .slider-row input[type=range] { flex: 2; }
-    
-    .alarm-banner { background: #b71c1c; color: white; padding: 8px 12px; border-radius: 4px; margin-bottom: 10px; font-weight: bold; animation: pulse 1s infinite; display: none; }
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-    
-    .lesson-step { padding: 8px 10px; border-left: 3px solid #555; background: #151b26; margin-bottom: 6px; border-radius: 0 4px 4px 0; font-size: 0.85rem; }
-    .lesson-step.passed { border-left-color: var(--accent-good); background: #132418; }
-    .lesson-step-title { font-weight: bold; }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100vh;
+      max-height: 100vh;
+      overflow: hidden;
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    /* TOP COMMAND RIBBON */
+    #ribbon {
+      height: 48px;
+      min-height: 48px;
+      background: var(--bg-ribbon);
+      border-bottom: 1px solid var(--border-dim);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      gap: 12px;
+      z-index: 100;
+    }
+    .brand-cluster {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .slb-badge {
+      background: var(--slb-blue);
+      color: #fff;
+      font-weight: 900;
+      font-size: 11px;
+      padding: 3px 7px;
+      border-radius: 3px;
+      letter-spacing: 0.5px;
+    }
+    .brand-title {
+      font-weight: 800;
+      font-size: 13px;
+      color: #fff;
+      letter-spacing: 1.2px;
+    }
+    .brand-subtitle {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .case-badge {
+      background: #0f1622;
+      border: 1px solid var(--border-dim);
+      color: var(--slb-cyan);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 3px;
+    }
+
+    /* WORKSPACE TABS */
+    .tabs-deck {
+      display: flex;
+      gap: 3px;
+      height: 100%;
+      align-items: flex-end;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      padding: 12px 14px 10px 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      text-transform: uppercase;
+    }
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .tab-btn.active {
+      color: var(--slb-cyan);
+      border-bottom-color: var(--slb-cyan);
+      background: rgba(0, 192, 240, 0.06);
+    }
+
+    /* SIMULATION CONTROL DECK */
+    .control-deck {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      background: #172433;
+      border: 1px solid #23374d;
+      color: #7dd3fc;
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--color-good);
+      box-shadow: 0 0 8px var(--color-good);
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
+
+    .clock-display {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      color: #e2e8f0;
+      background: #090e16;
+      border: 1px solid var(--border-dim);
+      padding: 4px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+    .speed-btn-group {
+      display: flex;
+      border: 1px solid var(--border-dim);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .speed-btn {
+      background: #111823;
+      border: none;
+      color: var(--text-dim);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 5px 8px;
+      cursor: pointer;
+    }
+    .speed-btn.active {
+      background: var(--slb-blue);
+      color: #fff;
+    }
+    .ribbon-btn {
+      background: #192332;
+      border: 1px solid var(--border-bright);
+      color: #e2e8f0;
+      border-radius: 4px;
+      padding: 5px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.15s;
+    }
+    .ribbon-btn:hover { background: #223044; }
+    .ribbon-btn.btn-run-good { background: #065f46; border-color: #059669; color: #a7f3d0; }
+    .ribbon-btn.btn-run-good:hover { background: #047857; }
+    .ribbon-btn.btn-run-paused { background: #881337; border-color: #be123c; color: #fecdd3; }
+    .ribbon-btn.btn-run-paused:hover { background: #9f1239; }
+
+    /* WORKSPACE SCREENS CONTAINER */
+    #workspace-container {
+      flex: 1;
+      height: calc(100vh - 48px);
+      overflow: hidden;
+      position: relative;
+    }
+    .workspace-screen {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: none;
+      height: 100%;
+      overflow: hidden;
+    }
+    .workspace-screen.active {
+      display: flex;
+    }
+
+    /* SCREEN 1: LANDSCAPE 4-COLUMN DRILLING & HYDRAULICS SUITE */
+    #screen-hydraulics {
+      display: none;
+      grid-template-columns: 210px 240px 1fr 340px;
+      gap: 8px;
+      padding: 8px;
+      height: 100%;
+      box-sizing: border-box;
+    }
+    #screen-hydraulics.active {
+      display: grid;
+    }
+
+    /* PANELS & CARDS */
+    .cad-panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-dim);
+      border-radius: 5px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .cad-header {
+      height: 28px;
+      min-height: 28px;
+      background: #101621;
+      border-bottom: 1px solid var(--border-dim);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      color: #94a3b8;
+      text-transform: uppercase;
+    }
+    .cad-badge {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: #172433;
+      color: var(--slb-cyan);
+      border: 1px solid #23374d;
+    }
+    .cad-body {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* COLUMN 1: WELLBORE CAD CANVAS */
+    #wellboreCanvas {
+      width: 100%;
+      height: 100%;
+      background: #090e15;
+      display: block;
+    }
+    .fluid-legend {
+      height: 26px;
+      background: #0e141f;
+      border-top: 1px solid var(--border-dim);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      font-size: 9.5px;
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+    }
+    .legend-item { display: flex; align-items: center; gap: 4px; }
+    .legend-box { width: 8px; height: 8px; border-radius: 1px; }
+
+    /* COLUMN 2: DRILLING WINDOW CANVAS */
+    #windowCanvas {
+      width: 100%;
+      height: 100%;
+      background: #090e15;
+      display: block;
+    }
+    .window-metrics {
+      height: 38px;
+      background: #0e141f;
+      border-top: 1px solid var(--border-dim);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      padding: 4px 8px;
+      gap: 6px;
+      font-family: var(--font-mono);
+    }
+    .wm-card {
+      background: #131c28;
+      border: 1px solid #1f2b3c;
+      border-radius: 3px;
+      padding: 2px 6px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .wm-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; }
+    .wm-val { font-size: 11px; font-weight: 700; color: #38bdf8; }
+
+    /* COLUMN 3: EDR STRIP CHART & LIVE READOUTS */
+    .edr-chart-container {
+      flex: 1;
+      position: relative;
+      background: #080c13;
+      overflow: hidden;
+    }
+    #stripChart {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .chart-cursor-hud {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      background: rgba(14, 20, 31, 0.9);
+      border: 1px solid var(--border-dim);
+      border-radius: 3px;
+      padding: 3px 8px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-dim);
+      display: flex;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    /* HUD TELEMETRY STRIP (Bottom of Col 3) */
+    .edr-telemetry-hud {
+      height: 64px;
+      min-height: 64px;
+      background: #0e141e;
+      border-top: 1px solid var(--border-dim);
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+      padding: 6px;
+    }
+    .hud-tile {
+      background: #141c28;
+      border: 1px solid var(--border-dim);
+      border-radius: 4px;
+      padding: 4px 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+    }
+    .hud-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .hud-num {
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+    .hud-unit {
+      font-size: 8.5px;
+      color: var(--text-muted);
+      align-self: flex-end;
+    }
+
+    /* COLUMN 4: RIG CONSOLE & SWACO CHOKE PANEL */
+    .console-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      height: 100%;
+      overflow-y: auto;
+      padding: 4px;
+    }
+    .dial-card {
+      background: #101722;
+      border: 1px solid var(--border-dim);
+      border-radius: 4px;
+      padding: 6px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+    #dialsCanvas {
+      width: 310px;
+      height: 130px;
+      display: block;
+    }
+
+    /* SWACO HYDRAULIC CHOKE CARD */
+    .choke-box {
+      background: #101722;
+      border: 1px solid var(--border-dim);
+      border-radius: 4px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .choke-row-main {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .choke-readout {
+      font-family: var(--font-mono);
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--color-choke);
+      letter-spacing: 0.5px;
+      font-variant-numeric: tabular-nums;
+    }
+    .choke-subreadout {
+      font-size: 10px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      text-align: right;
+    }
+    .choke-bar-track {
+      height: 7px;
+      background: #090e15;
+      border-radius: 3px;
+      overflow: hidden;
+      border: 1px solid #1f2b3e;
+    }
+    .choke-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981, #ffd54f, #f43f5e);
+      width: 100%;
+      transition: width 0.15s ease;
+    }
+    .jog-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+    }
+    .jog-btn {
+      background: #182232;
+      border: 1px solid var(--border-bright);
+      color: #e2e8f0;
+      padding: 7px 0;
+      font-size: 10.5px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      border-radius: 3px;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.1s;
+    }
+    .jog-btn:hover { background: #25354c; }
+    .jog-btn:active { background: #0077c8; color: #fff; }
+
+    /* AUTO-CHOKE ROW */
+    .autochoke-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #0c121b;
+      border: 1px solid var(--border-dim);
+      border-radius: 3px;
+      padding: 5px 8px;
+      font-size: 10.5px;
+    }
+    .toggle-pill {
+      background: #182433;
+      border: 1px solid var(--border-bright);
+      color: var(--text-dim);
+      font-size: 10px;
+      font-weight: 800;
+      padding: 4px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .toggle-pill.active {
+      background: var(--slb-blue);
+      border-color: #38bdf8;
+      color: #fff;
+    }
+
+    /* SWITCHGEAR CONTROLS */
+    .switch-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .switch-btn {
+      background: #141d2a;
+      border: 1px solid var(--border-bright);
+      color: #cbd5e1;
+      padding: 8px 6px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+      text-transform: uppercase;
+      transition: all 0.15s;
+    }
+    .switch-btn:hover { background: #1c293c; color: #fff; }
+    .switch-btn.active-green {
+      background: #065f46;
+      border-color: #10b981;
+      color: #a7f3d0;
+    }
+    .switch-btn.bop-danger {
+      background: #450a0a;
+      border: 1px solid #ef4444;
+      color: #fca5a5;
+    }
+    .switch-btn.bop-danger:hover { background: #7f1d1d; }
+    .switch-btn.bop-sealed {
+      background: #15803d;
+      border-color: #22c55e;
+      color: #dcfce7;
+    }
+
+    /* PUMP THROTTLE SLIDER */
+    .throttle-card {
+      background: #101722;
+      border: 1px solid var(--border-dim);
+      border-radius: 4px;
+      padding: 7px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+    input[type=range] {
+      width: 100%;
+      height: 5px;
+      background: #0a0f16;
+      border-radius: 2px;
+      accent-color: var(--slb-cyan);
+      cursor: pointer;
+    }
+
+    /* ALARM BANNER */
+    #alarm-banner {
+      position: absolute;
+      top: 54px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #991b1b;
+      color: #fff;
+      border: 1px solid #ef4444;
+      box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+      padding: 6px 20px;
+      border-radius: 4px;
+      font-size: 11.5px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      display: none;
+      z-index: 200;
+      animation: alertPulse 1s infinite alternate;
+    }
+    @keyframes alertPulse { from { opacity: 0.85; } to { opacity: 1; } }
+
+    /* SCREEN 2: IADC WELLSHARP WORKBENCH (Landscape 2-Column) */
+    #screen-iadc {
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 12px;
+      height: 100%;
+      box-sizing: border-box;
+    }
+    #screen-iadc.active { display: grid; }
+    .iadc-scroller {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px;
+    }
+    .lesson-item {
+      background: #0e141f;
+      border-left: 3px solid #334155;
+      border-radius: 0 4px 4px 0;
+      padding: 10px;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .lesson-item.passed {
+      border-left-color: var(--color-good);
+      background: rgba(16, 185, 129, 0.05);
+    }
+    .lesson-step-head { font-weight: 700; color: #f8fafc; }
+    .lesson-step-inst { color: #cbd5e1; font-size: 11.5px; }
+    .lesson-step-hint { color: var(--text-muted); font-size: 10px; font-style: italic; }
+
+    /* KILL SHEET FORM TABLE */
+    .ks-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      margin-top: 6px;
+    }
+    .ks-table td {
+      padding: 5px 8px;
+      border: 1px solid var(--border-dim);
+    }
+    .ks-label {
+      background: #101622;
+      color: var(--text-dim);
+      font-weight: 600;
+      width: 50%;
+    }
+    .ks-input {
+      width: 100%;
+      background: #090e15;
+      border: 1px solid var(--border-bright);
+      color: #fff;
+      padding: 4px 8px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      border-radius: 3px;
+    }
+
+    /* SCREEN 3: 3D SPATIAL & CASING INTEGRITY (Landscape 3-Column) */
+    #screen-3d-integrity {
+      display: none;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      padding: 10px;
+      height: 100%;
+      box-sizing: border-box;
+    }
+    #screen-3d-integrity.active { display: grid; }
+    #canvas3d {
+      width: 100%;
+      height: 100%;
+      background: #070a0f;
+      display: block;
+      cursor: grab;
+    }
+
+    /* SCREEN 4: STRATEGY COMPARISON */
+    #screen-strategy {
+      display: none;
+      padding: 12px;
+      height: 100%;
+      box-sizing: border-box;
+      flex-direction: column;
+    }
+    #screen-strategy.active { display: flex; }
+    .strategy-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      height: 100%;
+    }
+    .strategy-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-dim);
+      border-radius: 6px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* SCREEN 5: CASE STUDIO */
+    #screen-case-studio {
+      display: none;
+      padding: 12px;
+      height: 100%;
+      box-sizing: border-box;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    #screen-case-studio.active { display: grid; }
+    textarea.code-yaml {
+      width: 100%;
+      height: 100%;
+      background: #090e15;
+      border: 1px solid var(--border-dim);
+      color: #7dd3fc;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 10px;
+      resize: none;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
 
-  <header>
-    <div>
-      <h1>WELLSIM // CYBER DRILLING & WELL CONTROL CONSOLE</h1>
-      <small style="color: var(--text-muted);">Industrial Steady-State & Transient Simulation Platform</small>
+  <!-- TOP COMMAND & STATUS RIBBON -->
+  <header id="ribbon">
+    <div class="brand-cluster">
+      <span class="slb-badge">SLB</span>
+      <span class="brand-title">DRILLBENCH</span>
+      <span class="brand-subtitle">v2026.1 // Dynamic Well Control</span>
+      <span class="case-badge">CASE: DW-EXPLORATION-01</span>
     </div>
-    <div style="display: flex; gap: 10px; align-items: center;">
-      <span id="rig-badge" class="badge badge-drilling">DRILLING</span>
-      <button onclick="toggleAudio()" id="btn-audio">AUDIO: MUTED</button>
-      <button onclick="toggleRun()" id="btn-run" class="btn-good">SIMULATION RUNNING</button>
+
+    <!-- WORKSPACE TABS -->
+    <nav class="tabs-deck">
+      <button class="tab-btn active" onclick="switchTab('screen-hydraulics', this)">
+        <span>📊</span> Hydraulics &amp; Wellbore
+      </button>
+      <button class="tab-btn" onclick="switchTab('screen-iadc', this)">
+        <span>📋</span> IADC WellSharp &amp; Kill Sheet
+      </button>
+      <button class="tab-btn" onclick="switchTab('screen-3d-integrity', this)">
+        <span>🧭</span> 3D Spatial &amp; Integrity
+      </button>
+      <button class="tab-btn" onclick="switchTab('screen-strategy', this)">
+        <span>⚖️</span> Kill Comparison
+      </button>
+      <button class="tab-btn" onclick="switchTab('screen-case-studio', this)">
+        <span>⚙️</span> Case Studio
+      </button>
+    </nav>
+
+    <!-- SIMULATION CONTROL DECK -->
+    <div class="control-deck">
+      <div id="sim-state-pill" class="status-pill">
+        <span class="status-dot"></span>
+        <span id="rig-badge">DRILLING</span>
+      </div>
+
+      <div class="clock-display">
+        T = <span id="sim-time">0.0</span>s
+      </div>
+
+      <div class="speed-btn-group">
+        <button class="speed-btn active" onclick="setSpeed(1, this)">1x</button>
+        <button class="speed-btn" onclick="setSpeed(2, this)">2x</button>
+        <button class="speed-btn" onclick="setSpeed(5, this)">5x</button>
+      </div>
+
+      <button id="btn-run" class="ribbon-btn btn-run-good" onclick="toggleRun()">
+        <span id="run-icon">⏸</span> RUNNING
+      </button>
+
+      <button class="ribbon-btn" onclick="stepOnce()" title="Step 1 second forward">
+        <span>⏭</span> STEP
+      </button>
+
+      <button id="btn-audio" class="ribbon-btn" onclick="toggleAudio()">
+        <span id="audio-icon">🔔</span> AUDIO
+      </button>
+
+      <a href="/api/witsml/trajectory" download="trajectory.witsml.xml" style="text-decoration:none;">
+        <button class="ribbon-btn">
+          <span>📥</span> WITSML
+        </button>
+      </a>
     </div>
   </header>
 
-  <div id="alarm-box" class="alarm-banner"></div>
+  <!-- ALARM BANNER -->
+  <div id="alarm-banner"></div>
 
-  <div class="grid">
-    <!-- Left Column: Gauges, Strip Chart & Controls -->
-    <div>
-      <div class="card">
-        <div class="card-title">
-          <span>MAIN GAUGE CLUSTER</span>
-          <span style="font-size: 0.8rem; color: var(--text-muted);">Elapsed: <span id="sim-time">0.0</span>s</span>
-        </div>
-        <div class="gauge-cluster">
-          <div class="gauge-box">
-            <div class="gauge-label">Standpipe (SPP)</div>
-            <div id="val-spp" class="gauge-value" style="color: #29b6f6;">0</div>
-            <div class="gauge-unit">PSI</div>
-          </div>
-          <div class="gauge-box">
-            <div class="gauge-label">Casing Pressure</div>
-            <div id="val-casing" class="gauge-value" style="color: var(--accent-warn);">0</div>
-            <div class="gauge-unit">PSI</div>
-          </div>
-          <div class="gauge-box">
-            <div class="gauge-label">Bottomhole (BHP)</div>
-            <div id="val-bhp" class="gauge-value">0</div>
-            <div class="gauge-unit">PSI</div>
-          </div>
-          <div class="gauge-box">
-            <div class="gauge-label">Active Pit Volume</div>
-            <div id="val-pit" class="gauge-value">500.0</div>
-            <div class="gauge-unit">BBL</div>
-          </div>
-          <div class="gauge-box">
-            <div class="gauge-label">Cumulative Pit Gain</div>
-            <div id="val-gain" class="gauge-value" style="color: var(--accent-good);">+0.00</div>
-            <div class="gauge-unit">BBL</div>
-          </div>
-          <div class="gauge-box">
-            <div class="gauge-label">Flow Out Return</div>
-            <div id="val-flow" class="gauge-value">0.0</div>
-            <div class="gauge-unit">% PADDLE</div>
-          </div>
-        </div>
-      </div>
+  <!-- WORKSPACE SCREENS CONTAINER -->
+  <main id="workspace-container">
 
-      <!-- Real-Time Strip Chart -->
-      <div class="card">
-        <div class="card-title">REAL-TIME PRESSURE & PIT GAIN STRIP CHART</div>
-        <canvas id="stripChart" width="700" height="180" style="width: 100%; height: 180px; background: #0c1017; border-radius: 4px; border: 1px solid var(--border);"></canvas>
-        <div style="display: flex; justify-content: center; gap: 15px; margin-top: 6px; font-size: 0.75rem;">
-          <span style="color: #29b6f6;">■ Standpipe Pressure (SPP)</span>
-          <span style="color: #ff9800;">■ Casing Pressure (CICP)</span>
-          <span style="color: #4caf50;">■ Pit Gain (+bbl x50)</span>
-          <span style="color: #ffd54f;">--- Auto-Choke Target</span>
-        </div>
-      </div>
+    <!-- ======================================================== -->
+    <!-- SCREEN 1: DRILLING & DYNAMIC HYDRAULICS (LANDSCAPE 4-COL) -->
+    <!-- ======================================================== -->
+    <div id="screen-hydraulics" class="workspace-screen active">
 
-      <!-- Wellbore Dynamic Schematic & Drilling Window -->
-      <div class="card">
-        <div class="card-title">DYNAMIC WELLBORE SCHEMATIC & DRILLING WINDOW</div>
-        <div style="display: flex; gap: 15px; justify-content: space-around; align-items: flex-start; background: #121824; padding: 10px; border-radius: 6px;">
-          <div style="text-align: center;">
-            <small style="color: var(--text-muted); display: block; margin-bottom: 4px;">Dynamic Multi-Fluid Tracking</small>
-            <canvas id="wellboreCanvas" width="180" height="240" style="background: #0d121a; border: 1px solid var(--border); border-radius: 4px;"></canvas>
-            <div style="display: flex; gap: 6px; font-size: 0.7rem; justify-content: center; margin-top: 4px;">
-              <span style="color: #2e7d32;">■ OMW</span>
-              <span style="color: #7b1fa2;">■ KMW</span>
-              <span style="color: #f44336;">■ Gas Influx</span>
-            </div>
-          </div>
-          <div style="text-align: center; flex-grow: 1;">
-            <small style="color: var(--text-muted); display: block; margin-bottom: 4px;">Pore Pressure vs. Dynamic ECD vs. Fracture Limit</small>
-            <canvas id="windowCanvas" width="280" height="240" style="background: #0d121a; border: 1px solid var(--border); border-radius: 4px; width: 100%;"></canvas>
-            <div style="display: flex; gap: 10px; font-size: 0.7rem; justify-content: center; margin-top: 4px;">
-              <span style="color: #29b6f6;">■ Pore Pressure</span>
-              <span style="color: #4caf50;">■ Dynamic ECD</span>
-              <span style="color: #f44336;">--- Fracture Limit</span>
-            </div>
-          </div>
+      <!-- COL 1: WELLBORE CAD ELEVATION -->
+      <section class="cad-panel">
+        <div class="cad-header">
+          <span>WELLBORE ELEVATION</span>
+          <span class="cad-badge">TD 12,500'</span>
         </div>
-      </div>
+        <div class="cad-body">
+          <canvas id="wellboreCanvas" width="210" height="420"></canvas>
+        </div>
+        <div class="fluid-legend">
+          <div class="legend-item"><span class="legend-box" style="background:#1b5e20;"></span> OMW</div>
+          <div class="legend-item"><span class="legend-box" style="background:#7b1fa2;"></span> KMW</div>
+          <div class="legend-item"><span class="legend-box" style="background:#ef4444;"></span> INFLUX</div>
+        </div>
+      </section>
 
-      <!-- 3D Wellbore Trajectory & Geomechanical Integrity Card -->
-      <div class="card">
-        <div class="card-title">
-          <span>3D SPATIAL TRAJECTORY & REAL-TIME INTEGRITY</span>
-          <div style="display: flex; gap: 4px;">
-            <a href="/api/witsml/trajectory" download="trajectory.witsml.xml" style="text-decoration: none;">
-              <button style="padding: 2px 8px; font-size: 0.75rem; background: #00897b;">EXPORT WITSML 1.4</button>
-            </a>
-            <button onclick="reset3DCamera()" style="padding: 2px 8px; font-size: 0.75rem;">RESET VIEW</button>
+      <!-- COL 2: DOWNHOLE DRILLING WINDOW -->
+      <section class="cad-panel">
+        <div class="cad-header">
+          <span>DRILLING OPERATING WINDOW</span>
+          <span class="cad-badge">TVD vs EMW</span>
+        </div>
+        <div class="cad-body">
+          <canvas id="windowCanvas" width="240" height="420"></canvas>
+        </div>
+        <div class="window-metrics">
+          <div class="wm-card">
+            <span class="wm-label">Csg Shoe MAASP</span>
+            <span id="val-maasp" class="wm-val">1248 PSI</span>
+          </div>
+          <div class="wm-card">
+            <span class="wm-label">Shoe Pressure</span>
+            <span id="val-shoe-p" class="wm-val">0 PSI</span>
           </div>
         </div>
-        <div style="display: flex; gap: 12px; align-items: flex-start; background: #121824; padding: 10px; border-radius: 6px;">
-          <div style="text-align: center;">
-            <canvas id="canvas3d" width="340" height="230" style="background: #080c14; border: 1px solid var(--border); border-radius: 4px; cursor: grab;"></canvas>
-            <div style="display: flex; gap: 8px; font-size: 0.7rem; justify-content: center; margin-top: 4px;">
-              <span style="color: #4caf50;">■ DLS &lt; 2°</span>
-              <span style="color: #ffd54f;">■ DLS 2-4°</span>
-              <span style="color: #f44336;">■ DLS &gt; 4°/100ft</span>
-              <span style="color: #90a4ae;">(Drag to rotate 3D)</span>
-            </div>
+      </section>
+
+      <!-- COL 3: HIGH-RES EDR STRIP CHART -->
+      <section class="cad-panel">
+        <div class="cad-header">
+          <span>REAL-TIME EDR DRILLING RECORDER</span>
+          <div style="display:flex; gap:10px; font-size:9.5px; font-family:var(--font-mono);">
+            <span style="color:var(--color-spp);">■ SPP</span>
+            <span style="color:var(--color-casing);">■ CICP</span>
+            <span style="color:var(--color-pit);">■ GAIN (x50)</span>
+            <span style="color:var(--color-target);">--- AUTO CHOKE</span>
           </div>
-          <div style="flex-grow: 1; font-size: 0.8rem; display: flex; flex-direction: column; gap: 8px;">
-            <!-- Breathing / Kick Discriminator -->
-            <div style="background: #1a2230; padding: 8px; border-radius: 4px; border: 1px solid var(--border);">
-              <div style="font-weight: bold; color: var(--accent); margin-bottom: 4px;">BREATHING / KICK DISCRIMINATOR</div>
-              <div id="ballooning-badge" class="badge badge-drilling" style="display: inline-block;">ANALYZING...</div>
-              <div id="ballooning-details" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Monitoring flowback decay &amp; asymptotic gain...</div>
-            </div>
-            <!-- API 5CT Casing Structural Integrity -->
-            <div style="background: #1a2230; padding: 8px; border-radius: 4px; border: 1px solid var(--border);">
-              <div style="font-weight: bold; color: var(--accent); margin-bottom: 4px;">API 5CT CASING INTEGRITY ENVELOPE</div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-                <span>Min Burst Safety Factor:</span>
-                <span id="csg-burst-sf" style="font-weight: bold; color: #4caf50;">--</span>
+        </div>
+        <div class="edr-chart-container">
+          <canvas id="stripChart" width="800" height="280"></canvas>
+          <div id="chart-hud" class="chart-cursor-hud">
+            <span>SPP: <b id="hud-spp">--</b> psi</span>
+            <span>CICP: <b id="hud-cicp">--</b> psi</span>
+            <span>GAIN: <b id="hud-gain">--</b> bbl</span>
+          </div>
+        </div>
+        <!-- EDR Live Telemetry Strip -->
+        <div class="edr-telemetry-hud">
+          <div class="hud-tile">
+            <span class="hud-label">Standpipe (SPP)</span>
+            <span id="val-spp" class="hud-num" style="color:var(--color-spp);">0</span>
+            <span class="hud-unit">PSI</span>
+          </div>
+          <div class="hud-tile">
+            <span class="hud-label">Casing (CICP)</span>
+            <span id="val-casing" class="hud-num" style="color:var(--color-casing);">0</span>
+            <span class="hud-unit">PSI</span>
+          </div>
+          <div class="hud-tile">
+            <span class="hud-label">Bottomhole (BHP)</span>
+            <span id="val-bhp" class="hud-num" style="color:#38bdf8;">0</span>
+            <span class="hud-unit">PSI</span>
+          </div>
+          <div class="hud-tile">
+            <span class="hud-label">Active Pit Gain</span>
+            <span id="val-gain" class="hud-num" style="color:var(--color-pit);">+0.00</span>
+            <span class="hud-unit">BBL</span>
+          </div>
+          <div class="hud-tile">
+            <span class="hud-label">Flow Out Return</span>
+            <span id="val-flow" class="hud-num" style="color:var(--color-flow);">0.0</span>
+            <span class="hud-unit">% PADDLE</span>
+          </div>
+          <div class="hud-tile">
+            <span class="hud-label">Pit Volume</span>
+            <span id="val-pit" class="hud-num" style="color:#e2e8f0;">500.0</span>
+            <span class="hud-unit">BBL TOTAL</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- COL 4: RIG CONSOLE & SWACO CHOKE PANEL -->
+      <section class="cad-panel">
+        <div class="cad-header">
+          <span>SWACO CHOKE &amp; RIG CONSOLE</span>
+          <span class="cad-badge">HYDRAULIC</span>
+        </div>
+        <div class="console-stack">
+          <!-- Dual Dial Gauges (SPP & Casing) -->
+          <div class="dial-card">
+            <canvas id="dialsCanvas" width="310" height="130"></canvas>
+          </div>
+
+          <!-- SWACO Hydraulic Choke Console -->
+          <div class="choke-box">
+            <div class="choke-row-main">
+              <div>
+                <span style="font-size:9px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">CHOKE OPENING</span>
+                <div id="val-choke-pct" class="choke-readout">100%</div>
               </div>
-              <div style="display: flex; justify-content: space-between;">
-                <span>Min Collapse Safety Factor:</span>
-                <span id="csg-collapse-sf" style="font-weight: bold; color: #4caf50;">--</span>
-              </div>
-              <div id="csg-status" style="font-size: 0.75rem; color: #4caf50; margin-top: 4px;">STRUCTURAL RATING: SOUND</div>
-            </div>
-            <!-- UKF Real-Time Digital Twin State Estimator -->
-            <div style="background: #1a2230; padding: 8px; border-radius: 4px; border: 1px solid var(--border);">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span style="font-weight: bold; color: var(--accent);">UNSCENTED KALMAN FILTER (UKF)</span>
-                <span id="ukf-kick-badge" class="badge" style="background: #2e7d32; font-size: 0.65rem;">FILTER CONVERGED</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 0.75rem;">
-                <span>Inferred Pore Pressure:</span>
-                <span id="ukf-pore" style="font-weight: bold; color: #29b6f6;">-- psi</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 0.75rem;">
-                <span>Downhole Kick Volume:</span>
-                <span id="ukf-kick-vol" style="font-weight: bold; color: #ffd54f;">0.00 bbl</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 0.75rem;">
-                <span>Friction Multiplier:</span>
-                <span id="ukf-fric" style="color: #90a4ae;">1.000</span>
+              <div class="choke-subreadout">
+                <div>VALVE: CAMERON 3"</div>
+                <div style="color:var(--color-good);">HYDRAULIC READY</div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Remote Choke & BOP Console -->
-      <div class="card">
-        <div class="card-title">REMOTE HYDRAULIC CHOKE CONSOLE</div>
-        <div class="choke-console">
-          <div style="display: flex; justify-content: space-around; align-items: center; background: #121824; padding: 10px; border-radius: 6px;">
-            <div>
-              <div class="gauge-label">CHOKE OPENING</div>
-              <div id="val-choke-pct" style="font-size: 1.8rem; font-weight: bold; color: var(--accent);">100%</div>
+            <div class="choke-bar-track">
+              <div id="choke-bar" class="choke-bar-fill"></div>
             </div>
-            <div>
-              <div class="gauge-label">CASING SHOE INTEGRITY</div>
-              <div id="val-shoe-p" style="font-size: 1.2rem; font-weight: bold;">0 PSI</div>
-              <small style="color: var(--text-muted);">MAASP: <span id="val-maasp">1248</span> PSI</small>
+
+            <div class="jog-grid">
+              <button class="jog-btn" onclick="jogChoke(-10)">◀◀ -10%</button>
+              <button class="jog-btn" onclick="jogChoke(-2)">◀ -2%</button>
+              <button class="jog-btn" onclick="jogChoke(2)">+2% ▶</button>
+              <button class="jog-btn" onclick="jogChoke(10)">+10% ▶▶</button>
+            </div>
+
+            <!-- Auto-Choke Subpanel -->
+            <div class="autochoke-row">
+              <button id="btn-autochoke" class="toggle-pill" onclick="toggleAutoChoke()">AUTO-CHOKE: OFF</button>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <label style="color:var(--text-muted); font-size:10px;">Target:</label>
+                <input type="number" id="txt-choke-target" value="750" style="width:65px; background:#090e15; border:1px solid var(--border-bright); color:#fff; padding:3px 6px; font-family:var(--font-mono); font-size:11px; border-radius:3px;" onchange="updateChokeTarget(this.value)">
+                <span style="font-size:9.5px; color:var(--text-muted);">psi</span>
+              </div>
             </div>
           </div>
 
-          <!-- Auto-Choke Subpanel -->
-          <div style="display: flex; gap: 10px; align-items: center; background: #141b27; padding: 8px; border-radius: 4px; border: 1px solid var(--border);">
-            <button id="btn-autochoke" onclick="toggleAutoChoke()">AUTO-CHOKE: OFF</button>
-            <label style="font-size: 0.8rem; color: var(--text-muted);">Target Setpoint (psi):</label>
-            <input type="number" id="txt-choke-target" value="750" style="width: 80px; background: #121824; border: 1px solid var(--border); color: #fff; padding: 4px; border-radius: 3px;" onchange="updateChokeTarget(this.value)">
-            <span style="font-size: 0.75rem; color: var(--text-muted);">(PID automated choke adjustment)</span>
+          <!-- Well Control Switchgear -->
+          <div class="switch-grid">
+            <button id="btn-space" class="switch-btn" onclick="toggleSpaceOut()">SPACE OUT JOINT</button>
+            <button id="btn-bop" class="switch-btn bop-danger" onclick="toggleBOP()">CLOSE BOP (RAMS)</button>
+            <button id="btn-hcr" class="switch-btn" onclick="toggleHCR()">OPEN HCR VALVE</button>
+            <button id="btn-killmud" class="switch-btn" onclick="toggleKillMud()">ACTIVATE KILL MUD</button>
           </div>
 
-          <div class="choke-controls">
-            <button onclick="jogChoke(-10)">◀◀ CLOSE 10%</button>
-            <button onclick="jogChoke(-2)">◀ CLOSE 2%</button>
-            <button onclick="jogChoke(2)">OPEN 2% ▶</button>
-            <button onclick="jogChoke(10)">OPEN 10% ▶▶</button>
+          <!-- Mud Pump Throttle -->
+          <div class="throttle-card">
+            <div class="slider-header">
+              <span>TRIPLEX MUD PUMPS 1 &amp; 2</span>
+              <span><b id="lbl-spm">100</b> SPM (<span id="lbl-gpm">420</span> GPM)</span>
+            </div>
+            <input type="range" id="rng-spm" min="0" max="120" value="100" oninput="onPumpChange(this.value)">
           </div>
 
-          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
-            <button id="btn-space" onclick="toggleSpaceOut()">SPACE OUT TOOL JOINT</button>
-            <button id="btn-bop" onclick="toggleBOP()" class="btn-danger">CLOSE BOP (RAMS)</button>
-            <button id="btn-hcr" onclick="toggleHCR()">OPEN HCR VALVE</button>
-            <button id="btn-killmud" onclick="toggleKillMud()">ACTIVATE KILL MUD</button>
+          <!-- Manual Choke Fallback Slider -->
+          <div class="throttle-card">
+            <div class="slider-header">
+              <span>MANUAL CHOKE SLIDER</span>
+              <span><b id="lbl-choke">100</b>% OPEN</span>
+            </div>
+            <input type="range" id="rng-choke" min="0" max="100" value="100" oninput="onChokeChange(this.value)">
           </div>
         </div>
-      </div>
-
-      <!-- Driller Console Inputs -->
-      <div class="card">
-        <div class="card-title">DRILLER OPERATIONAL THROTTLE</div>
-        <div class="slider-row">
-          <label>Mud Pump 1 & 2 Speed: <b id="lbl-spm">100</b> SPM (<span id="lbl-gpm">420</span> GPM)</label>
-          <input type="range" id="rng-spm" min="0" max="120" value="100" oninput="onPumpChange(this.value)">
-        </div>
-        <div class="slider-row">
-          <label>Choke Position: <b id="lbl-choke">100</b>% Open</label>
-          <input type="range" id="rng-choke" min="0" max="100" value="100" oninput="onChokeChange(this.value)">
-        </div>
-      </div>
+      </section>
     </div>
 
-    <!-- Right Column: Interactive Lesson & Kill Sheet -->
-    <div>
-      <div class="card">
-        <div class="card-title">
-          <span>IADC WELLSHARP LESSONS</span>
-          <select id="sel-lesson" onchange="changeLesson(this.value)" style="background: #141b27; color: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px;">
+    <!-- ======================================================== -->
+    <!-- SCREEN 2: IADC WELLSHARP & KILL SHEET (LANDSCAPE 2-COL)   -->
+    <!-- ======================================================== -->
+    <div id="screen-iadc" class="workspace-screen">
+      <!-- Left: Lesson Checklist -->
+      <section class="cad-panel">
+        <div class="cad-header">
+          <span>IADC WELLSHARP CURRICULUM SCENARIO</span>
+          <select id="sel-lesson" onchange="changeLesson(this.value)" style="background:#090e15; color:#fff; border:1px solid var(--border-bright); border-radius:3px; padding:2px 8px; font-size:10.5px;">
             <option value="lesson_1_kick_detection">Lesson 1: Kick Detection</option>
             <option value="lesson_2_shut_in">Lesson 2: Shut-In Protocols</option>
             <option value="lesson_3_kill_sheet">Lesson 3: Kill Sheet Math</option>
             <option value="lesson_4_well_kill">Lesson 4: Well Kill Circulation</option>
           </select>
         </div>
-        <p id="lesson-summary" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;"></p>
-        <div style="margin-bottom: 10px;">
-          <small style="color: var(--text-muted);">Lesson Progress:</small>
-          <div style="background: #141b27; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 4px;">
-            <div id="prog-bar" style="background: var(--accent-good); width: 0%; height: 100%;"></div>
+        <div style="padding:10px 14px; background:#101722; border-bottom:1px solid var(--border-dim); display:flex; align-items:center; gap:12px;">
+          <div style="flex:1;">
+            <div style="display:flex; justify-content:space-between; font-size:10.5px; margin-bottom:4px;">
+              <span id="lesson-summary" style="color:var(--text-dim);">Kick Detection Drill</span>
+              <span id="prog-pct" style="font-family:var(--font-mono); font-weight:700; color:var(--slb-cyan);">0%</span>
+            </div>
+            <div style="background:#090e15; height:6px; border-radius:3px; overflow:hidden;">
+              <div id="prog-bar" style="background:var(--slb-cyan); width:0%; height:100%; transition:width 0.2s;"></div>
+            </div>
           </div>
         </div>
-        <div id="lesson-steps"></div>
-      </div>
+        <div id="lesson-steps" class="iadc-scroller"></div>
+      </section>
 
-      <!-- Kill Sheet Calculator Form -->
-      <div class="card">
-        <div class="card-title">
-          <span>IADC KILL SHEET SUBMISSION</span>
-          <div style="display: flex; gap: 4px;">
-            <button onclick="printKillSheetForm()" style="padding: 2px 8px; font-size: 0.75rem; background: #3949ab;">PRINT IADC FORM</button>
-            <button onclick="exportKillSheetReport()" style="padding: 2px 8px; font-size: 0.75rem;">EXPORT REPORT</button>
+      <!-- Right: Official IADC Kill Sheet -->
+      <section class="cad-panel">
+        <div class="cad-header">
+          <span>OFFICIAL IADC WELL CONTROL KILL SHEET</span>
+          <div style="display:flex; gap:6px;">
+            <button class="ribbon-btn" onclick="printKillSheetForm()" style="padding:2px 8px; font-size:10px;">PRINT FORM</button>
+            <button class="ribbon-btn" onclick="exportKillSheetReport()" style="padding:2px 8px; font-size:10px;">EXPORT MD</button>
           </div>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85rem;">
-          <div>
-            <label style="color: var(--text-muted);">Kill Mud Wt (ppg):</label>
-            <input type="number" id="ks-kmw" step="0.1" style="width: 100%; background: #121824; border: 1px solid var(--border); color: #fff; padding: 4px; border-radius: 3px;" placeholder="e.g. 11.0">
-          </div>
-          <div>
-            <label style="color: var(--text-muted);">Initial ICP (psi):</label>
-            <input type="number" id="ks-icp" step="1" style="width: 100%; background: #121824; border: 1px solid var(--border); color: #fff; padding: 4px; border-radius: 3px;" placeholder="e.g. 1120">
-          </div>
-          <div>
-            <label style="color: var(--text-muted);">Final FCP (psi):</label>
-            <input type="number" id="ks-fcp" step="1" style="width: 100%; background: #121824; border: 1px solid var(--border); color: #fff; padding: 4px; border-radius: 3px;" placeholder="e.g. 660">
-          </div>
-          <div>
-            <label style="color: var(--text-muted);">Initial MAASP (psi):</label>
-            <input type="number" id="ks-maasp" step="1" style="width: 100%; background: #121824; border: 1px solid var(--border); color: #fff; padding: 4px; border-radius: 3px;" placeholder="e.g. 1248">
-          </div>
-        </div>
-        <button onclick="submitKillSheet()" style="width: 100%; margin-top: 10px;" class="btn-good">GRADE KILL SHEET</button>
-        <div id="ks-feedback" style="margin-top: 8px; font-size: 0.8rem;"></div>
-      </div>
+        <div style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:12px;">
+          <table class="ks-table">
+            <tr>
+              <td class="ks-label">Original Mud Weight (ppg):</td>
+              <td><input type="number" id="ks-kmw" step="0.1" class="ks-input" placeholder="e.g. 11.0"></td>
+            </tr>
+            <tr>
+              <td class="ks-label">Initial Circulating Pressure (ICP, psi):</td>
+              <td><input type="number" id="ks-icp" step="1" class="ks-input" placeholder="e.g. 1120"></td>
+            </tr>
+            <tr>
+              <td class="ks-label">Final Circulating Pressure (FCP, psi):</td>
+              <td><input type="number" id="ks-fcp" step="1" class="ks-input" placeholder="e.g. 660"></td>
+            </tr>
+            <tr>
+              <td class="ks-label">Initial MAASP (psi):</td>
+              <td><input type="number" id="ks-maasp" step="1" class="ks-input" placeholder="e.g. 1248"></td>
+            </tr>
+          </table>
 
-      <!-- Visual Case Studio & Well Designer Card -->
-      <div class="card">
-        <div class="card-title">
-          <span>VISUAL CASE STUDIO &amp; WELL DESIGNER</span>
-          <button onclick="exportCustomCaseYaml()" style="padding: 2px 8px; font-size: 0.75rem; background: #00897b;">EXPORT CASE YAML</button>
+          <button onclick="submitKillSheet()" class="ribbon-btn btn-run-good" style="justify-content:center; padding:9px; font-size:12px;">
+            GRADE IADC KILL SHEET
+          </button>
+          <div id="ks-feedback"></div>
+
+          <!-- Step Down Pressure Canvas -->
+          <div style="margin-top:auto; background:#090e15; border:1px solid var(--border-dim); border-radius:4px; padding:8px;">
+            <span style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">DRILL PIPE PRESSURE STEP-DOWN SCHEDULE (ICP ➔ FCP)</span>
+            <canvas id="stepDownCanvas" width="460" height="130" style="width:100%; height:130px; display:block; margin-top:6px;"></canvas>
+          </div>
         </div>
-        <div style="font-size: 0.8rem; display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-            <div>
-              <label style="color: var(--text-muted); font-size: 0.75rem;">Case Name:</label>
-              <input type="text" id="cs-name" value="deepwater_exploration_01" style="width: 100%; background: #121824; border: 1px solid var(--border); color: #fff; padding: 4px; border-radius: 3px;">
+      </section>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SCREEN 3: 3D SPATIAL & CASING INTEGRITY (LANDSCAPE 3-COL) -->
+    <!-- ======================================================== -->
+    <div id="screen-3d-integrity" class="workspace-screen">
+      <!-- Col 1: 3D Orbit -->
+      <section class="cad-panel">
+        <div class="cad-header">
+          <span>3D WELLBORE TRAJECTORY</span>
+          <button class="ribbon-btn" onclick="reset3DCamera()" style="padding:2px 6px; font-size:9.5px;">RESET VIEW</button>
+        </div>
+        <div class="cad-body">
+          <canvas id="canvas3d" width="340" height="380"></canvas>
+        </div>
+        <div class="fluid-legend">
+          <span style="color:#10b981;">■ DLS &lt; 2°</span>
+          <span style="color:#ffd54f;">■ DLS 2-4°</span>
+          <span style="color:#ef4444;">■ DLS &gt; 4°/100ft</span>
+        </div>
+      </section>
+
+      <!-- Col 2: API 5CT Structural Casing Integrity -->
+      <section class="cad-panel">
+        <div class="cad-header">
+          <span>API SPEC 5CT CASING INTEGRITY</span>
+          <span id="csg-status" class="cad-badge" style="color:#10b981;">SOUND</span>
+        </div>
+        <div style="padding:14px; display:flex; flex-direction:column; gap:14px; font-family:var(--font-mono);">
+          <div style="background:#0e141f; border:1px solid var(--border-dim); border-radius:4px; padding:12px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+              <span style="color:var(--text-dim); font-size:11px;">MIN BURST SAFETY FACTOR:</span>
+              <span id="csg-burst-sf" style="font-size:16px; font-weight:800; color:#10b981;">--</span>
             </div>
-            <div>
-              <label style="color: var(--text-muted); font-size: 0.75rem;">Total Depth MD (ft):</label>
-              <input type="number" id="cs-td" value="12500" style="width: 100%; background: #121824; border: 1px solid var(--border); color: #fff; padding: 4px; border-radius: 3px;">
+            <div style="background:#070a0f; height:6px; border-radius:3px; overflow:hidden;">
+              <div id="burst-bar" style="background:#10b981; width:80%; height:100%;"></div>
             </div>
-            <div>
-              <label style="color: var(--text-muted); font-size: 0.75rem;">Reservoir Pres (psia):</label>
-              <input type="number" id="cs-pres" value="6800" style="width: 100%; background: #121824; border: 1px solid var(--border); color: #fff; padding: 4px; border-radius: 3px;">
+            <small style="color:var(--text-muted); font-size:9.5px; display:block; margin-top:4px;">Threshold &gt; 1.10 (API RP 90 / 5C3)</small>
+          </div>
+
+          <div style="background:#0e141f; border:1px solid var(--border-dim); border-radius:4px; padding:12px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+              <span style="color:var(--text-dim); font-size:11px;">MIN COLLAPSE SAFETY FACTOR:</span>
+              <span id="csg-collapse-sf" style="font-size:16px; font-weight:800; color:#10b981;">--</span>
             </div>
-            <div>
-              <label style="color: var(--text-muted); font-size: 0.75rem;">Permeability (mD):</label>
-              <input type="number" id="cs-perm" value="120" style="width: 100%; background: #121824; border: 1px solid var(--border); color: #fff; padding: 4px; border-radius: 3px;">
+            <div style="background:#070a0f; height:6px; border-radius:3px; overflow:hidden;">
+              <div id="collapse-bar" style="background:#10b981; width:75%; height:100%;"></div>
+            </div>
+            <small style="color:var(--text-muted); font-size:9.5px; display:block; margin-top:4px;">Threshold &gt; 1.00 (External Hydrostatic)</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- Col 3: AI State Estimation & Ballooning -->
+      <section class="cad-panel">
+        <div class="cad-header">
+          <span>ADVANCED DIGITAL TWIN &amp; UKF</span>
+          <span id="ukf-kick-badge" class="cad-badge" style="color:#10b981;">CONVERGED</span>
+        </div>
+        <div style="padding:14px; display:flex; flex-direction:column; gap:12px; font-family:var(--font-mono);">
+          <!-- Ballooning -->
+          <div style="background:#0e141f; border:1px solid var(--border-dim); border-radius:4px; padding:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <span style="font-size:10.5px; font-weight:700; color:var(--slb-cyan);">WELLBORE BALLOONING</span>
+              <span id="ballooning-badge" class="status-pill" style="font-size:9px;">ANALYZING</span>
+            </div>
+            <div id="ballooning-details" style="font-size:10px; color:var(--text-dim); margin-top:4px;">Monitoring flowback decay...</div>
+          </div>
+
+          <!-- UKF State -->
+          <div style="background:#0e141f; border:1px solid var(--border-dim); border-radius:4px; padding:10px; display:flex; flex-direction:column; gap:6px;">
+            <span style="font-size:10.5px; font-weight:700; color:var(--slb-cyan);">UNSCENTED KALMAN FILTER</span>
+            <div style="display:flex; justify-content:space-between; font-size:11px;">
+              <span style="color:var(--text-muted);">Inferred Pore Pressure:</span>
+              <span id="ukf-pore" style="font-weight:700; color:#38bdf8;">-- psi</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:11px;">
+              <span style="color:var(--text-muted);">Downhole Influx Vol:</span>
+              <span id="ukf-kick-vol" style="font-weight:700; color:#ffd54f;">0.00 bbl</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:11px;">
+              <span style="color:var(--text-muted);">Annular Friction Mult:</span>
+              <span id="ukf-fric" style="color:#94a3b8;">1.000</span>
             </div>
           </div>
-          <div>
-            <label style="color: var(--text-muted); font-size: 0.75rem;">Casing Shoe TVD (ft):</label>
-            <input type="number" id="cs-shoe" value="10500" style="width: 100%; background: #121824; border: 1px solid var(--border); color: #fff; padding: 4px; border-radius: 3px;">
+        </div>
+      </section>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SCREEN 4: WELL CONTROL STRATEGY COMPARISON               -->
+    <!-- ======================================================== -->
+    <div id="screen-strategy" class="workspace-screen">
+      <div class="strategy-grid">
+        <div class="strategy-card">
+          <div style="font-weight:800; color:var(--slb-cyan); font-size:13px; border-bottom:1px solid var(--border-dim); padding-bottom:6px;">DRILLER'S METHOD</div>
+          <p style="font-size:11px; color:var(--text-dim);">Two full circulations. 1st cycle: circulate influx with original mud. 2nd cycle: circulate kill mud.</p>
+          <div style="margin-top:auto; font-family:var(--font-mono); font-size:11px; display:flex; flex-direction:column; gap:4px;">
+            <div>Max Shoe Stress: <b style="color:#ef4444;">High (Longest Exposure)</b></div>
+            <div>Complexity: <b style="color:#10b981;">Lowest (Immediate Start)</b></div>
+            <div>Circulations: <b>2.0 Cycles</b></div>
           </div>
-          <div id="cs-status" style="font-size: 0.75rem; color: #4caf50;">Ready to validate and generate production YAML spec.</div>
+        </div>
+
+        <div class="strategy-card">
+          <div style="font-weight:800; color:#10b981; font-size:13px; border-bottom:1px solid var(--border-dim); padding-bottom:6px;">WAIT &amp; WEIGHT</div>
+          <p style="font-size:11px; color:var(--text-dim);">Engineer's single-circulation kill. Mix kill mud weight while shut in, then circulate kill mud directly down string.</p>
+          <div style="margin-top:auto; font-family:var(--font-mono); font-size:11px; display:flex; flex-direction:column; gap:4px;">
+            <div>Max Shoe Stress: <b style="color:#10b981;">Lowest (Preferred)</b></div>
+            <div>Complexity: <b style="color:#ffd54f;">Moderate (Step-Down Chart)</b></div>
+            <div>Circulations: <b>1.0 Cycle</b></div>
+          </div>
+        </div>
+
+        <div class="strategy-card">
+          <div style="font-weight:800; color:#f59e0b; font-size:13px; border-bottom:1px solid var(--border-dim); padding-bottom:6px;">VOLUMETRIC METHOD</div>
+          <p style="font-size:11px; color:var(--text-dim);">Non-circulating kill. Used when drillstring is plugged or off-bottom. Gas migrates and expands; bleed mud proportionally.</p>
+          <div style="margin-top:auto; font-family:var(--font-mono); font-size:11px; display:flex; flex-direction:column; gap:4px;">
+            <div>Max Shoe Stress: <b style="color:#f59e0b;">Moderate to High</b></div>
+            <div>Complexity: <b style="color:#ef4444;">High (Manual Bleed Cycle)</b></div>
+            <div>Circulations: <b>0 (Static Migration)</b></div>
+          </div>
+        </div>
+
+        <div class="strategy-card">
+          <div style="font-weight:800; color:#ef4444; font-size:13px; border-bottom:1px solid var(--border-dim); padding-bottom:6px;">BULLHEADING</div>
+          <p style="font-size:11px; color:var(--text-dim);">Pumping heavy mud down the well at high rates to force gas influx directly back into the permeable formation.</p>
+          <div style="margin-top:auto; font-family:var(--font-mono); font-size:11px; display:flex; flex-direction:column; gap:4px;">
+            <div>Max Shoe Stress: <b style="color:#ef4444;">Extreme (Formation Frac)</b></div>
+            <div>Complexity: <b style="color:#ffd54f;">High Risk of Pack-off</b></div>
+            <div>Application: <b>H2S or Emergency</b></div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+
+    <!-- ======================================================== -->
+    <!-- SCREEN 5: CASE STUDIO & WELL DESIGNER                    -->
+    <!-- ======================================================== -->
+    <div id="screen-case-studio" class="workspace-screen">
+      <section class="cad-panel">
+        <div class="cad-header">
+          <span>PARAMETRIC WELL SPECIFICATION</span>
+          <button class="ribbon-btn btn-run-good" onclick="exportCustomCaseYaml()" style="padding:2px 8px; font-size:10px;">EXPORT CASE YAML</button>
+        </div>
+        <div style="padding:14px; display:flex; flex-direction:column; gap:10px; font-size:11px;">
+          <div>
+            <label style="color:var(--text-dim); display:block; margin-bottom:4px;">Case Name:</label>
+            <input type="text" id="cs-name" value="deepwater_exploration_01" class="ks-input">
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="color:var(--text-dim); display:block; margin-bottom:4px;">Total Depth MD (ft):</label>
+              <input type="number" id="cs-td" value="12500" class="ks-input">
+            </div>
+            <div>
+              <label style="color:var(--text-dim); display:block; margin-bottom:4px;">Casing Shoe TVD (ft):</label>
+              <input type="number" id="cs-shoe" value="10500" class="ks-input">
+            </div>
+            <div>
+              <label style="color:var(--text-dim); display:block; margin-bottom:4px;">Reservoir Pres (psia):</label>
+              <input type="number" id="cs-pres" value="6800" class="ks-input">
+            </div>
+            <div>
+              <label style="color:var(--text-dim); display:block; margin-bottom:4px;">Permeability (mD):</label>
+              <input type="number" id="cs-perm" value="120" class="ks-input">
+            </div>
+          </div>
+          <div id="cs-status" style="margin-top:10px; color:#10b981; font-family:var(--font-mono); font-size:11px;">Ready to generate production simulation case.</div>
+        </div>
+      </section>
+
+      <section class="cad-panel">
+        <div class="cad-header"><span>GENERATED YAML CASE PREVIEW</span></div>
+        <textarea id="yaml-preview" class="code-yaml" readonly></textarea>
+      </section>
+    </div>
+
+  </main>
 
   <script>
     let isRunning = true;
     let audioEnabled = false;
     let audioCtx = null;
+    let simSpeed = 1;
     let controls = {
       pump_spm: 100,
       choke_pct: 100,
@@ -454,20 +1316,27 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     const maxPoints = 80;
     const history = { spp: [], casing: [], gain: [], target: [] };
 
-    function initAudio() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
+    // TAB SWITCHER
+    function switchTab(screenId, btn) {
+      document.querySelectorAll('.workspace-screen').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      const scr = document.getElementById(screenId);
+      if (scr) scr.classList.add('active');
+      if (btn) btn.classList.add('active');
+      if (screenId === 'screen-case-studio') updateYamlPreview();
     }
 
+    // AUDIO
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
     function toggleAudio() {
       initAudio();
       audioEnabled = !audioEnabled;
       const btn = document.getElementById('btn-audio');
-      btn.innerText = audioEnabled ? 'AUDIO: ENABLED' : 'AUDIO: MUTED';
-      btn.className = audioEnabled ? 'btn-good' : '';
+      btn.innerHTML = audioEnabled ? '<span>🔔</span> AUDIO' : '<span>🔕</span> MUTED';
+      btn.style.color = audioEnabled ? '#10b981' : '#94a3b8';
     }
-
     function playBeep(freq, duration) {
       if (!audioEnabled || !audioCtx) return;
       try {
@@ -476,24 +1345,46 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         osc.frequency.value = freq;
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        gain.gain.value = 0.15;
+        gain.gain.value = 0.12;
         osc.start();
         osc.stop(audioCtx.currentTime + duration);
       } catch (e) {}
     }
 
+    // SIM SPEED & CONTROLS
+    function setSpeed(spd, btn) {
+      simSpeed = spd;
+      document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+    }
+
+    function toggleRun() {
+      isRunning = !isRunning;
+      const btn = document.getElementById('btn-run');
+      btn.className = isRunning ? 'ribbon-btn btn-run-good' : 'ribbon-btn btn-run-paused';
+      btn.innerHTML = isRunning ? '<span>⏸</span> RUNNING' : '<span>▶</span> PAUSED';
+      const dot = document.querySelector('.status-dot');
+      if (dot) dot.style.background = isRunning ? 'var(--color-good)' : 'var(--color-danger)';
+    }
+
+    async function stepOnce() {
+      await tick();
+    }
+
     async function tick() {
       if (!isRunning) return;
       try {
+        const dtVal = 1.0 * simSpeed;
         const resp = await fetch('/api/step', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ dt: 1.0, controls })
+          body: JSON.stringify({ dt: dtVal, controls })
         });
         const st = await resp.json();
         updateUI(st);
         recordHistory(st);
         renderChart();
+        drawDials(st.spp_psi, st.casing_pressure_psi);
       } catch (e) {
         console.error("Tick error:", e);
       }
@@ -504,7 +1395,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     function recordHistory(st) {
       history.spp.push(st.spp_psi);
       history.casing.push(st.casing_pressure_psi);
-      history.gain.push(st.pit_gain_bbl * 50); // Scale for visibility on 0-5000 scale
+      history.gain.push(st.pit_gain_bbl * 50);
       history.target.push(controls.auto_choke_target_psi);
       if (history.spp.length > maxPoints) {
         history.spp.shift();
@@ -514,6 +1405,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       }
     }
 
+    // DRAW EDR STRIP CHART
     function renderChart() {
       const cvs = document.getElementById('stripChart');
       if (!cvs) return;
@@ -522,13 +1414,17 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       const h = cvs.height;
       ctx.clearRect(0, 0, w, h);
 
-      // Grid
-      ctx.strokeStyle = '#1b2535';
+      // Oscilloscope background grid
+      ctx.strokeStyle = '#111824';
       ctx.lineWidth = 1;
-      for (let y = 0; y < h; y += 45) {
+      for (let y = 0; y < h; y += 40) {
         ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
+        ctx.moveTo(0, y); ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+      for (let x = 0; x < w; x += 50) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0); ctx.lineTo(x, h);
         ctx.stroke();
       }
 
@@ -551,12 +1447,89 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         ctx.stroke();
       }
 
-      drawLine(history.target, '#ffd54f', true);
-      drawLine(history.gain, '#4caf50');
-      drawLine(history.spp, '#29b6f6');
+      drawLine(history.target, '#f59e0b', true);
+      drawLine(history.gain, '#10b981');
       drawLine(history.casing, '#ff9800');
+      drawLine(history.spp, '#00c0f0');
+
+      // Update Cursor HUD with latest values
+      if (history.spp.length > 0) {
+        document.getElementById('hud-spp').innerText = Math.round(history.spp[history.spp.length - 1]);
+        document.getElementById('hud-cicp').innerText = Math.round(history.casing[history.casing.length - 1]);
+        document.getElementById('hud-gain').innerText = (history.gain[history.gain.length - 1] / 50).toFixed(2);
+      }
     }
 
+    // DRAW SWACO DIALS
+    function drawDials(spp, casing) {
+      const cvs = document.getElementById('dialsCanvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+      function drawGauge(cx, cy, r, val, maxVal, title, unit, col) {
+        // Outer dark bezel
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+        ctx.fillStyle = '#0b1017';
+        ctx.fill();
+        ctx.strokeStyle = '#223043';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Calibrated scale arc (from 135 deg to 405 deg)
+        const startAng = 0.75 * Math.PI;
+        const endAng = 2.25 * Math.PI;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r - 6, startAng, endAng);
+        ctx.strokeStyle = '#182436';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        // Value arc
+        const pct = Math.max(0, Math.min(1.0, val / maxVal));
+        const valAng = startAng + pct * (endAng - startAng);
+        ctx.beginPath();
+        ctx.arc(cx, cy, r - 6, startAng, valAng);
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        // Needle
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        const nx = cx + (r - 12) * Math.cos(valAng);
+        const ny = cy + (r - 12) * Math.sin(valAng);
+        ctx.lineTo(nx, ny);
+        ctx.strokeStyle = '#f8fafc';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Center hub
+        ctx.beginPath();
+        ctx.arc(cx, cy, 4, 0, 2 * Math.PI);
+        ctx.fillStyle = col;
+        ctx.fill();
+
+        // Label & value
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '8px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(title, cx, cy - 14);
+
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px monospace';
+        ctx.fillText(Math.round(val), cx, cy + 18);
+        ctx.fillStyle = '#64748b';
+        ctx.font = '7.5px monospace';
+        ctx.fillText(unit, cx, cy + 28);
+      }
+
+      drawGauge(75, 65, 55, spp, 5000, "STANDPIPE", "PSI", "#00c0f0");
+      drawGauge(235, 65, 55, casing, 5000, "CASING", "PSI", "#ff9800");
+    }
+
+    // UPDATE UI TELEMETRY
     function updateUI(st) {
       document.getElementById('sim-time').innerText = st.time_s.toFixed(1);
       document.getElementById('val-spp').innerText = Math.round(st.spp_psi);
@@ -568,33 +1541,34 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       document.getElementById('val-choke-pct').innerText = Math.round(st.choke_pct) + '%';
       document.getElementById('rng-choke').value = Math.round(st.choke_pct);
       document.getElementById('lbl-choke').innerText = Math.round(st.choke_pct);
+      document.getElementById('choke-bar').style.width = Math.round(st.choke_pct) + '%';
       document.getElementById('val-shoe-p').innerText = Math.round(st.shoe_pressure_psi) + ' PSI';
-      document.getElementById('val-maasp').innerText = Math.round(st.maasp_psi);
+      document.getElementById('val-maasp').innerText = Math.round(st.maasp_psi) + ' PSI';
 
       // Badge
       const badge = document.getElementById('rig-badge');
-      badge.innerText = st.rig_state;
-      badge.className = 'badge badge-' + st.rig_state.toLowerCase().replace('_', '-');
+      badge.innerText = st.rig_state.replace('_', ' ');
 
       // Alarms & Audio
-      const alarmBox = document.getElementById('alarm-box');
+      const alarmBanner = document.getElementById('alarm-banner');
       if (st.active_alarms && st.active_alarms.length > 0) {
-        alarmBox.style.display = 'block';
-        alarmBox.innerText = '⚠ ' + st.active_alarms.join(' | ');
-        playBeep(880, 0.2); // Alert tone
+        alarmBanner.style.display = 'block';
+        alarmBanner.innerText = '⚠ ' + st.active_alarms.join(' | ');
+        playBeep(880, 0.2);
       } else {
-        alarmBox.style.display = 'none';
+        alarmBanner.style.display = 'none';
       }
 
       // Lesson
       if (st.lesson) {
         document.getElementById('prog-bar').style.width = st.lesson.progress_pct + '%';
+        document.getElementById('prog-pct').innerText = Math.round(st.lesson.progress_pct) + '%';
         let stepsHtml = '';
         st.lesson.steps.forEach(s => {
-          stepsHtml += `<div class="lesson-step ${s.passed ? 'passed' : ''}">
-            <div class="lesson-step-title">${s.passed ? '✓' : '○'} Step ${s.step_number}: ${s.title}</div>
-            <div>${s.instruction}</div>
-            <div style="color: var(--text-muted); font-size: 0.75rem;">Hint: ${s.hint}</div>
+          stepsHtml += `<div class="lesson-item ${s.passed ? 'passed' : ''}">
+            <div class="lesson-step-head">${s.passed ? '✓' : '○'} Step ${s.step_number}: ${s.title}</div>
+            <div class="lesson-step-inst">${s.instruction}</div>
+            <div class="lesson-step-hint">Hint: ${s.hint}</div>
           </div>`;
         });
         document.getElementById('lesson-steps').innerHTML = stepsHtml;
@@ -604,163 +1578,152 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       drawPressureWindow(st);
     }
 
+    // DRAW WELLBORE SCHEMATIC
     function drawWellboreSchematic(st) {
-      const canvas = document.getElementById('wellboreCanvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width;
-      const h = canvas.height;
+      const cvs = document.getElementById('wellboreCanvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      const w = cvs.width;
+      const h = cvs.height;
       ctx.clearRect(0, 0, w, h);
 
       const cx = w / 2;
-      const shoeY = h * 0.60;
-      const tdY = h * 0.95;
+      const shoeY = h * 0.62;
+      const tdY = h * 0.94;
 
-      // Casing section
-      ctx.fillStyle = '#223044';
-      ctx.fillRect(cx - 45, 10, 90, shoeY - 10);
-      ctx.strokeStyle = '#546e7a';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(cx - 45, 10, 90, shoeY - 10);
+      // Depth ticks on left
+      ctx.fillStyle = '#64748b';
+      ctx.font = '8px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText("0'", 4, 15);
+      ctx.fillText("5,000'", 4, h * 0.35);
+      ctx.fillText("10,500'", 4, shoeY);
+      ctx.fillText("12,500'", 4, tdY);
+
+      // Casing string
+      ctx.fillStyle = '#162130';
+      ctx.fillRect(cx - 38, 12, 76, shoeY - 12);
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(cx - 38, 12, 76, shoeY - 12);
 
       // Open hole section
-      ctx.fillStyle = '#1a1f29';
-      ctx.fillRect(cx - 38, shoeY, 76, tdY - shoeY);
-      ctx.strokeStyle = '#8d6e63';
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(cx - 38, shoeY, 76, tdY - shoeY);
+      ctx.fillStyle = '#111722';
+      ctx.fillRect(cx - 32, shoeY, 64, tdY - shoeY);
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(cx - 32, shoeY, 64, tdY - shoeY);
 
-      // Mud fluid in annulus (OMW)
+      // Annulus Base Mud (OMW)
       ctx.fillStyle = '#1b5e20';
-      ctx.fillRect(cx - 43, 10, 86, shoeY - 10);
-      ctx.fillRect(cx - 36, shoeY, 72, tdY - shoeY);
+      ctx.fillRect(cx - 36, 12, 72, shoeY - 12);
+      ctx.fillRect(cx - 30, shoeY, 60, tdY - shoeY);
 
       // Kill mud displacement front
       if (st.kill_mud_in_annulus_bbl > 0) {
         const kmwRatio = Math.min(1.0, st.kill_mud_in_annulus_bbl / 850.0);
-        const kmwY = tdY - (tdY - 10) * kmwRatio;
+        const kmwY = tdY - (tdY - 12) * kmwRatio;
         ctx.fillStyle = '#7b1fa2';
-        ctx.fillRect(cx - 36, kmwY, 72, tdY - kmwY);
+        ctx.fillRect(cx - 30, kmwY, 60, tdY - kmwY);
       }
 
       // Gas influx bubble
       if (st.influx_volume_bbl > 0) {
-        const yTop = 10 + (st.influx_top_md / 10000.0) * (tdY - 10);
-        const bubbleH = Math.max(12, (st.influx_volume_bbl / 20.0) * 35);
-        ctx.fillStyle = '#f44336';
-        ctx.fillRect(cx - 42, Math.min(tdY - bubbleH, yTop), 84, bubbleH);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '9px monospace';
-        ctx.fillText('GAS INFLUX', cx - 26, Math.min(tdY - 4, yTop + 10));
+        const yTop = 12 + (st.influx_top_md / 12500.0) * (tdY - 12);
+        const bubbleH = Math.max(14, (st.influx_volume_bbl / 20.0) * 40);
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(cx - 35, Math.min(tdY - bubbleH, yTop), 70, bubbleH);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 8.5px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('GAS INFLUX', cx, Math.min(tdY - 4, yTop + 10));
       }
 
       // Drillstring
-      ctx.fillStyle = '#90a4ae';
-      ctx.fillRect(cx - 8, 10, 16, tdY - 10);
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(cx - 6, 12, 12, tdY - 12);
       // Bit
       ctx.fillStyle = '#ffd54f';
       ctx.beginPath();
-      ctx.moveTo(cx - 16, tdY - 6);
-      ctx.lineTo(cx + 16, tdY - 6);
+      ctx.moveTo(cx - 12, tdY - 6);
+      ctx.lineTo(cx + 12, tdY - 6);
       ctx.lineTo(cx, tdY + 2);
       ctx.closePath();
       ctx.fill();
-
-      // Labels
-      ctx.fillStyle = '#9e9e9e';
-      ctx.font = '8px monospace';
-      ctx.fillText('0 ft', 4, 18);
-      ctx.fillText('Shoe 6k', 4, shoeY);
-      ctx.fillText('TD 10k', 4, tdY);
     }
 
+    // DRAW DRILLING WINDOW
     function drawPressureWindow(st) {
-      const canvas = document.getElementById('windowCanvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width;
-      const h = canvas.height;
+      const cvs = document.getElementById('windowCanvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      const w = cvs.width;
+      const h = cvs.height;
       ctx.clearRect(0, 0, w, h);
 
-      const mLeft = 25;
-      const mRight = 15;
-      const mTop = 15;
-      const mBottom = 25;
-      const pWidth = w - mLeft - mRight;
-      const pHeight = h - mTop - mBottom;
+      const mLeft = 24, mRight = 14, mTop = 15, mBottom = 22;
+      const pW = w - mLeft - mRight;
+      const pH = h - mTop - mBottom;
 
-      // Grid
-      ctx.strokeStyle = '#1e2838';
+      // EMW Grid Lines
+      ctx.strokeStyle = '#182434';
       ctx.lineWidth = 1;
+      ctx.fillStyle = '#64748b';
+      ctx.font = '8px monospace';
+      ctx.textAlign = 'center';
       for (let emw = 8; emw <= 16; emw += 2) {
-        const x = mLeft + ((emw - 8) / 8.0) * pWidth;
+        const x = mLeft + ((emw - 8) / 8.0) * pW;
         ctx.beginPath();
-        ctx.moveTo(x, mTop);
-        ctx.lineTo(x, h - mBottom);
+        ctx.moveTo(x, mTop); ctx.lineTo(x, h - mBottom);
         ctx.stroke();
-        ctx.fillStyle = '#607d8b';
-        ctx.font = '8px monospace';
-        ctx.fillText(emw + ' ppg', x - 12, h - 10);
+        ctx.fillText(emw + 'p', x, h - 8);
       }
 
-      // Pore Pressure (blue: 10.5 ppg)
-      const xPore = mLeft + ((10.5 - 8) / 8.0) * pWidth;
-      ctx.strokeStyle = '#29b6f6';
-      ctx.lineWidth = 2;
+      // Pore Pressure (Cyan: 10.5 ppg)
+      const xPore = mLeft + ((10.5 - 8) / 8.0) * pW;
+      ctx.strokeStyle = '#00c0f0';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
       ctx.beginPath();
-      ctx.moveTo(xPore, mTop);
-      ctx.lineTo(xPore, h - mBottom);
+      ctx.moveTo(xPore, mTop); ctx.lineTo(xPore, h - mBottom);
       ctx.stroke();
 
-      // Fracture Limit (red dashed: 14.5 ppg)
-      const xFrac = mLeft + ((14.5 - 8) / 8.0) * pWidth;
-      ctx.strokeStyle = '#f44336';
-      ctx.lineWidth = 2;
+      // Fracture Limit (Red: 14.5 ppg)
+      const xFrac = mLeft + ((14.5 - 8) / 8.0) * pW;
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
-      ctx.moveTo(xFrac, mTop);
-      ctx.lineTo(xFrac, h - mBottom);
+      ctx.moveTo(xFrac, mTop); ctx.lineTo(xFrac, h - mBottom);
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Dynamic ECD
-      const ecd = Math.max(8.0, Math.min(16.0, st.bhp_psi / (0.052 * 10000.0) || 12.0));
-      const xEcd = mLeft + ((ecd - 8) / 8.0) * pWidth;
-      ctx.strokeStyle = '#4caf50';
+      // Dynamic ECD Curve
+      const ecd = Math.max(8.0, Math.min(16.0, st.bhp_psi / (0.052 * 12500.0) || 11.2));
+      const xEcd = mLeft + ((ecd - 8) / 8.0) * pW;
+      ctx.strokeStyle = '#10b981';
       ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.moveTo(xEcd, mTop);
-      ctx.lineTo(xEcd, h - mBottom);
+      ctx.moveTo(xEcd, mTop); ctx.lineTo(xEcd, h - mBottom);
       ctx.stroke();
 
-      // Draw current point indicator
-      ctx.fillStyle = '#4caf50';
+      // Current ECD dot indicator
+      ctx.fillStyle = '#10b981';
       ctx.beginPath();
       ctx.arc(xEcd, h - mBottom, 4, 0, 2 * Math.PI);
       ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.font = '9px monospace';
-      ctx.fillText('ECD: ' + ecd.toFixed(2) + ' ppg', Math.max(mLeft, Math.min(w - 90, xEcd - 30)), mTop + 14);
     }
 
-    function toggleRun() {
-      isRunning = !isRunning;
-      const btn = document.getElementById('btn-run');
-      btn.innerText = isRunning ? 'SIMULATION RUNNING' : 'SIMULATION PAUSED';
-      btn.className = isRunning ? 'btn-good' : 'btn-danger';
-    }
-
+    // CONTROL ACTIONS
     function onPumpChange(v) {
       controls.pump_spm = parseFloat(v);
       document.getElementById('lbl-spm').innerText = v;
-      document.getElementById('lbl-gpm').innerText = Math.round(v * 0.1 * 42);
+      document.getElementById('lbl-gpm').innerText = Math.round(v * 4.2);
     }
-
     function onChokeChange(v) {
       controls.choke_pct = parseFloat(v);
       document.getElementById('lbl-choke').innerText = v;
     }
-
     function jogChoke(delta) {
       let cur = controls.choke_pct + delta;
       cur = Math.max(0, Math.min(100, cur));
@@ -768,44 +1731,35 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       document.getElementById('rng-choke').value = cur;
       document.getElementById('lbl-choke').innerText = cur;
     }
-
     function toggleAutoChoke() {
       controls.auto_choke = !controls.auto_choke;
       const btn = document.getElementById('btn-autochoke');
-      btn.className = controls.auto_choke ? 'btn-good' : '';
+      btn.className = controls.auto_choke ? 'toggle-pill active' : 'toggle-pill';
       btn.innerText = controls.auto_choke ? 'AUTO-CHOKE: ACTIVE' : 'AUTO-CHOKE: OFF';
     }
-
     function updateChokeTarget(v) {
       controls.auto_choke_target_psi = parseFloat(v) || 750.0;
     }
-
     function toggleSpaceOut() {
       controls.spaced_out = !controls.spaced_out;
       const btn = document.getElementById('btn-space');
-      btn.className = controls.spaced_out ? 'btn-good' : '';
-      btn.innerText = controls.spaced_out ? 'SPACED OUT: YES' : 'SPACE OUT TOOL JOINT';
+      btn.className = controls.spaced_out ? 'switch-btn active-green' : 'switch-btn';
     }
-
     function toggleBOP() {
       controls.bop_closed = !controls.bop_closed;
       const btn = document.getElementById('btn-bop');
-      btn.className = controls.bop_closed ? 'btn-good' : 'btn-danger';
+      btn.className = controls.bop_closed ? 'switch-btn bop-sealed' : 'switch-btn bop-danger';
       btn.innerText = controls.bop_closed ? 'BOP CLOSED (SEALED)' : 'CLOSE BOP (RAMS)';
     }
-
     function toggleHCR() {
       controls.hcr_open = !controls.hcr_open;
       const btn = document.getElementById('btn-hcr');
-      btn.className = controls.hcr_open ? 'btn-good' : '';
-      btn.innerText = controls.hcr_open ? 'HCR OPEN' : 'OPEN HCR VALVE';
+      btn.className = controls.hcr_open ? 'switch-btn active-green' : 'switch-btn';
     }
-
     function toggleKillMud() {
       controls.kill_mud_active = !controls.kill_mud_active;
       const btn = document.getElementById('btn-killmud');
-      btn.className = controls.kill_mud_active ? 'btn-good' : '';
-      btn.innerText = controls.kill_mud_active ? 'KILL MUD: ACTIVE' : 'ACTIVATE KILL MUD';
+      btn.className = controls.kill_mud_active ? 'switch-btn active-green' : 'switch-btn';
     }
 
     async function changeLesson(id) {
@@ -830,88 +1784,109 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       });
       const res = await resp.json();
       const fbBox = document.getElementById('ks-feedback');
-      let fbHtml = `<div style="font-weight: bold; color: ${res.passed ? 'var(--accent-good)' : 'var(--accent-danger)'};">
-        ${res.passed ? 'CONGRATULATIONS: PASSED (SCORE ' + res.score_pct + '%)' : 'NEEDS REVISION (SCORE ' + res.score_pct + '%)'}
-      </div><ul style="margin-left: 15px; margin-top: 5px;">`;
+      let fbHtml = `<div style="font-weight:bold; font-size:11.5px; color:${res.passed ? 'var(--color-good)' : 'var(--color-danger)'};">
+        ${res.passed ? 'PASSED (GRADE: ' + res.score_pct + '%)' : 'REVISION REQUIRED (SCORE: ' + res.score_pct + '%)'}
+      </div><ul style="margin-left:14px; margin-top:4px; font-size:10.5px; color:var(--text-dim); line-height:1.4;">`;
       res.feedback.forEach(f => { fbHtml += `<li>${f}</li>`; });
       fbHtml += '</ul>';
       fbBox.innerHTML = fbHtml;
+      drawStepDownChart(payload.icp, payload.fcp);
     }
 
-    function exportKillSheetReport() {
-      window.open('/api/killsheet/export', '_blank');
+    function drawStepDownChart(icp, fcp) {
+      const cvs = document.getElementById('stepDownCanvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      const w = cvs.width, h = cvs.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.strokeStyle = '#182434'; ctx.lineWidth = 1;
+      ctx.strokeRect(20, 10, w - 30, h - 30);
+
+      // Line from ICP to FCP
+      const yIcp = 15;
+      const yFcp = h - 35;
+      ctx.strokeStyle = '#00c0f0';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(25, yIcp);
+      ctx.lineTo(w - 20, yFcp);
+      ctx.stroke();
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '8.5px monospace';
+      ctx.fillText('ICP ' + (icp || 1120) + ' psi', 30, yIcp + 12);
+      ctx.fillText('FCP ' + (fcp || 660) + ' psi', w - 90, yFcp - 6);
     }
 
-    function printKillSheetForm() {
-      window.open('/api/killsheet/print', '_blank');
+    function exportKillSheetReport() { window.open('/api/killsheet/export', '_blank'); }
+    function printKillSheetForm() { window.open('/api/killsheet/print', '_blank'); }
+
+    // CASE STUDIO YAML
+    function updateYamlPreview() {
+      const name = document.getElementById('cs-name').value || 'case';
+      const td = document.getElementById('cs-td').value || 12500;
+      const shoe = document.getElementById('cs-shoe').value || 10500;
+      const pres = document.getElementById('cs-pres').value || 6800;
+      const perm = document.getElementById('cs-perm').value || 120;
+      const yaml = `name: ${name}
+version: 1
+reservoir:
+  pressure: ${pres} psia
+  temperature: 240 degF
+  permeability: ${perm} mD
+  depth_md: ${td} ft
+fluid:
+  type: dry_gas
+  gas_sg: 0.65
+well:
+  total_depth_md: ${td} ft
+  hole:
+    - {top_md: 0, bottom_md: ${shoe}, id: 8.681 in, kind: casing}
+    - {top_md: ${shoe}, bottom_md: ${td}, id: 8.5 in, kind: open_hole}
+`;
+      document.getElementById('yaml-preview').value = yaml;
     }
 
     async function exportCustomCaseYaml() {
-      const payload = {
-        name: document.getElementById('cs-name').value || 'custom_case',
-        td_md_ft: parseFloat(document.getElementById('cs-td').value) || 12500.0,
-        shoe_md_ft: parseFloat(document.getElementById('cs-shoe').value) || 10500.0,
-        pres_psia: parseFloat(document.getElementById('cs-pres').value) || 6800.0,
-        perm_md: parseFloat(document.getElementById('cs-perm').value) || 120.0,
-      };
-      try {
-        const resp = await fetch('/api/case/export', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const yamlText = await resp.text();
-        const blob = new Blob([yamlText], { type: 'text/yaml' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = payload.name + '.yaml';
-        a.click();
-        document.getElementById('cs-status').innerText = '✓ Exported ' + payload.name + '.yaml successfully!';
-      } catch (e) {
-        document.getElementById('cs-status').innerText = 'Export failed: ' + e;
-      }
+      updateYamlPreview();
+      const yamlText = document.getElementById('yaml-preview').value;
+      const name = document.getElementById('cs-name').value || 'case';
+      const blob = new Blob([yamlText], { type: 'text/yaml' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name + '.yaml';
+      a.click();
+      document.getElementById('cs-status').innerText = '✓ Exported ' + name + '.yaml successfully!';
     }
 
-    // 3D Spatial Trajectory Engine & Mouse Orbit Controls
+    // 3D SPATIAL ENGINE
     let trajData = [];
-    let camYaw = 0.8;
-    let camPitch = 0.4;
-    let isDragging3D = false;
-    let lastMouseX = 0;
-    let lastMouseY = 0;
+    let camYaw = 0.8, camPitch = 0.4;
+    let isDragging3D = false, lastMouseX = 0, lastMouseY = 0;
 
     async function init3DTrajectory() {
       try {
         const resp = await fetch('/api/trajectory');
         trajData = await resp.json();
         renderTrajectory3D();
-      } catch (e) {
-        console.error("Failed to load trajectory:", e);
-      }
+      } catch (e) {}
     }
-
     function reset3DCamera() {
-      camYaw = 0.8;
-      camPitch = 0.4;
+      camYaw = 0.8; camPitch = 0.4;
       renderTrajectory3D();
     }
 
     const canvas3d = document.getElementById('canvas3d');
     if (canvas3d) {
       canvas3d.addEventListener('mousedown', (e) => {
-        isDragging3D = true;
-        lastMouseX = e.clientX;
-        lastMouseY = e.clientY;
+        isDragging3D = true; lastMouseX = e.clientX; lastMouseY = e.clientY;
       });
       window.addEventListener('mouseup', () => { isDragging3D = false; });
       window.addEventListener('mousemove', (e) => {
         if (!isDragging3D) return;
-        const dx = e.clientX - lastMouseX;
-        const dy = e.clientY - lastMouseY;
-        camYaw += dx * 0.015;
-        camPitch = Math.max(-1.4, Math.min(1.4, camPitch + dy * 0.015));
-        lastMouseX = e.clientX;
-        lastMouseY = e.clientY;
+        camYaw += (e.clientX - lastMouseX) * 0.015;
+        camPitch = Math.max(-1.4, Math.min(1.4, camPitch + (e.clientY - lastMouseY) * 0.015));
+        lastMouseX = e.clientX; lastMouseY = e.clientY;
         renderTrajectory3D();
       });
     }
@@ -920,152 +1895,62 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       const cv = document.getElementById('canvas3d');
       if (!cv || !trajData || trajData.length === 0) return;
       const ctx = cv.getContext('2d');
-      const w = cv.width;
-      const h = cv.height;
+      const w = cv.width, h = cv.height;
       ctx.clearRect(0, 0, w, h);
-
-      const cx = w / 2;
-      const cy = h / 2 - 10;
-      const scale = 0.018;
-
-      const midNorth = trajData[trajData.length - 1].north_ft * 0.5;
-      const midEast = trajData[trajData.length - 1].east_ft * 0.5;
-      const midTvd = trajData[trajData.length - 1].tvd_ft * 0.5;
+      const cx = w / 2, cy = h / 2 - 10, scale = 0.020;
 
       function project(n, e, tvd) {
-        let x = (e - midEast);
-        let y = (n - midNorth);
-        let z = (tvd - midTvd);
-
+        let x = e, y = n, z = tvd - 6000;
         let x1 = x * Math.cos(camYaw) - y * Math.sin(camYaw);
         let y1 = x * Math.sin(camYaw) + y * Math.cos(camYaw);
         let z1 = z;
-
         let y2 = y1 * Math.cos(camPitch) - z1 * Math.sin(camPitch);
         let z2 = y1 * Math.sin(camPitch) + z1 * Math.cos(camPitch);
-
         return { x: cx + x1 * scale, y: cy + z2 * scale };
       }
 
-      // Draw Grid / Ground surface reference
-      ctx.strokeStyle = '#1a2636';
-      ctx.lineWidth = 1;
-      const surf0 = project(0, 0, 0);
-      const surfN = project(2000, 0, 0);
-      const surfE = project(0, 2000, 0);
-      ctx.beginPath();
-      ctx.moveTo(surf0.x, surf0.y); ctx.lineTo(surfN.x, surfN.y);
-      ctx.moveTo(surf0.x, surf0.y); ctx.lineTo(surfE.x, surfE.y);
-      ctx.stroke();
-
-      ctx.fillStyle = '#f44336'; ctx.font = '9px monospace'; ctx.fillText('N', surfN.x + 3, surfN.y);
-      ctx.fillStyle = '#4caf50'; ctx.fillText('E', surfE.x + 3, surfE.y);
-
-      // Draw Trajectory line segments
       for (let i = 0; i < trajData.length - 1; i++) {
         const p1 = project(trajData[i].north_ft, trajData[i].east_ft, trajData[i].tvd_ft);
         const p2 = project(trajData[i + 1].north_ft, trajData[i + 1].east_ft, trajData[i + 1].tvd_ft);
-
         const dls = trajData[i + 1].dls_deg_100ft || 0.0;
-        let col = '#4caf50';
-        if (dls > 4.0) col = '#f44336';
-        else if (dls > 2.0) col = '#ffd54f';
-
-        ctx.strokeStyle = col;
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = dls > 4.0 ? '#ef4444' : (dls > 2.0 ? '#ffd54f' : '#10b981');
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
+        ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
         ctx.stroke();
       }
-
-      // Wellhead marker
-      const wh = project(0, 0, 0);
-      ctx.fillStyle = '#00bcd4';
-      ctx.beginPath(); ctx.arc(wh.x, wh.y, 4, 0, 2 * Math.PI); ctx.fill();
-      ctx.fillText('WELLHEAD', wh.x + 6, wh.y + 3);
-
-      // Bit at TD
-      const last = trajData[trajData.length - 1];
-      const bit = project(last.north_ft, last.east_ft, last.tvd_ft);
-      ctx.fillStyle = '#ffd54f';
-      ctx.beginPath(); ctx.arc(bit.x, bit.y, 5, 0, 2 * Math.PI); ctx.fill();
-      ctx.fillText('BIT: MD ' + Math.round(last.md_ft) + "'", bit.x + 7, bit.y + 3);
-
-      // Overlay HUD stats
-      ctx.fillStyle = '#90a4ae';
-      ctx.font = '9px monospace';
-      ctx.fillText('YAW: ' + (camYaw * 57.3 % 360).toFixed(0) + '° | PITCH: ' + (camPitch * 57.3).toFixed(0) + '°', 8, 14);
     }
 
     async function updateIntegrityMonitors() {
       try {
-        const bResp = await fetch('/api/ballooning');
-        const bData = await bResp.json();
-        const badge = document.getElementById('ballooning-badge');
-        const det = document.getElementById('ballooning-details');
-        if (badge && bData) {
-          badge.innerText = bData.diagnosis;
-          if (bData.diagnosis === 'BALLOONING') {
-            badge.className = 'badge';
-            badge.style.background = '#e65100';
-          } else if (bData.diagnosis.indexOf('KICK') !== -1) {
-            badge.className = 'badge';
-            badge.style.background = '#f44336';
-          } else {
-            badge.className = 'badge badge-drilling';
-            badge.style.background = '#2e7d32';
-          }
-          det.innerText = 'dq/dt: ' + bData.flow_decay_rate_gpm_per_min + ' gpm/min | Asymptote: ' + bData.asymptotic_volume_bbl + ' bbl | Conf: ' + bData.confidence_pct + '%';
-        }
+        const [bResp, cResp, kResp] = await Promise.all([
+          fetch('/api/ballooning').then(r => r.json()).catch(() => null),
+          fetch('/api/casing_integrity').then(r => r.json()).catch(() => null),
+          fetch('/api/kalman').then(r => r.json()).catch(() => null)
+        ]);
 
-        const cResp = await fetch('/api/casing_integrity');
-        const cData = await cResp.json();
-        if (cData) {
-          const elBurst = document.getElementById('csg-burst-sf');
-          const elColl = document.getElementById('csg-collapse-sf');
-          const elStat = document.getElementById('csg-status');
-          if (elBurst) {
-            elBurst.innerText = cData.min_burst_sf;
-            elBurst.style.color = cData.min_burst_sf >= 1.1 ? '#4caf50' : '#f44336';
-          }
-          if (elColl) {
-            elColl.innerText = cData.min_collapse_sf;
-            elColl.style.color = cData.min_collapse_sf >= 1.0 ? '#4caf50' : '#f44336';
-          }
-          if (elStat) {
-            elStat.innerText = cData.is_structurally_sound ? 'STRUCTURAL RATING: SOUND' : 'WARNING: CASING STRESS LIMIT EXCEEDED';
-            elStat.style.color = cData.is_structurally_sound ? '#4caf50' : '#f44336';
-          }
+        if (bResp) {
+          const badge = document.getElementById('ballooning-badge');
+          if (badge) badge.innerText = bResp.diagnosis;
+          const det = document.getElementById('ballooning-details');
+          if (det) det.innerText = `dq/dt: ${bResp.flow_decay_rate_gpm_per_min} gpm/min | Asymptote: ${bResp.asymptotic_volume_bbl} bbl`;
         }
-
-        // 3. UKF Real-Time Digital Twin State Estimator
-        const kResp = await fetch('/api/kalman');
-        const kData = await kResp.json();
-        if (kData) {
-          const elPore = document.getElementById('ukf-pore');
-          const elKick = document.getElementById('ukf-kick-vol');
-          const elFric = document.getElementById('ukf-fric');
-          const elBadge = document.getElementById('ukf-kick-badge');
-          if (elPore) elPore.innerText = Math.round(kData.pore_pressure_psi) + ' ± ' + Math.round(2 * kData.pore_pressure_std_psi) + ' psi';
-          if (elKick) {
-            elKick.innerText = kData.influx_volume_bbl.toFixed(2) + ' bbl';
-            elKick.style.color = kData.influx_volume_bbl > 1.0 ? '#f44336' : '#ffd54f';
-          }
-          if (elFric) elFric.innerText = kData.friction_multiplier.toFixed(3);
-          if (elBadge) {
-            elBadge.innerText = kData.is_kick_detected ? 'KICK DETECTED (UKF)' : 'FILTER CONVERGED';
-            elBadge.style.background = kData.is_kick_detected ? '#f44336' : '#2e7d32';
-          }
+        if (cResp) {
+          document.getElementById('csg-burst-sf').innerText = cResp.min_burst_sf;
+          document.getElementById('csg-collapse-sf').innerText = cResp.min_collapse_sf;
         }
-      } catch (e) {
-        console.error("Failed to update integrity monitors:", e);
-      }
+        if (kResp) {
+          document.getElementById('ukf-pore').innerText = Math.round(kResp.pore_pressure_psi) + ' psi';
+          document.getElementById('ukf-kick-vol').innerText = kResp.influx_volume_bbl.toFixed(2) + ' bbl';
+          document.getElementById('ukf-fric').innerText = kResp.friction_multiplier.toFixed(3);
+        }
+      } catch (e) {}
     }
 
     init3DTrajectory();
     setInterval(updateIntegrityMonitors, 3000);
     updateIntegrityMonitors();
+    drawStepDownChart(1120, 660);
   </script>
 </body>
 </html>
